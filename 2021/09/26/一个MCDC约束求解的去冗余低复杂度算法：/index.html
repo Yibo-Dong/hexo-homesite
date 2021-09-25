@@ -20,27 +20,36 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
+  <meta name="description" content="一个MC&#x2F;DC约束求解的去冗余低复杂度算法Dong Yibo 背景：在MC&#x2F;DC求解中，当前CAUT-Core使用的是递归叠加约束并大批量传递给约束求解器。使得是在近似O(2^n)状态空间中进行搜索，得到2n个测试用例。一方面这使得集成测试的时候将因约束组合而使得复杂度爆炸，另一方面也存在冗余测试用例。 针对这一问题进行检索和探究，找到了一个近似线性的去冗余算法。 思路：对于表达式和对应取值的一个">
+<meta property="og:type" content="article">
 <meta property="og:title" content="Good Good Study">
-<meta property="og:url" content="http://example.com/index.html">
+<meta property="og:url" content="http://example.com/2021/09/26/%E4%B8%80%E4%B8%AAMCDC%E7%BA%A6%E6%9D%9F%E6%B1%82%E8%A7%A3%E7%9A%84%E5%8E%BB%E5%86%97%E4%BD%99%E4%BD%8E%E5%A4%8D%E6%9D%82%E5%BA%A6%E7%AE%97%E6%B3%95%EF%BC%9A/index.html">
 <meta property="og:site_name" content="Good Good Study">
+<meta property="og:description" content="一个MC&#x2F;DC约束求解的去冗余低复杂度算法Dong Yibo 背景：在MC&#x2F;DC求解中，当前CAUT-Core使用的是递归叠加约束并大批量传递给约束求解器。使得是在近似O(2^n)状态空间中进行搜索，得到2n个测试用例。一方面这使得集成测试的时候将因约束组合而使得复杂度爆炸，另一方面也存在冗余测试用例。 针对这一问题进行检索和探究，找到了一个近似线性的去冗余算法。 思路：对于表达式和对应取值的一个">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="c:/Users/dongyibo/tcipsh_docs/image-20210428160620596.png">
+<meta property="og:image" content="c:/Users/dongyibo/tcipsh_docs/image-20210428160750069.png">
+<meta property="og:image" content="c:/Users/dongyibo/tcipsh_docs/image-20210428160808991.png">
+<meta property="og:image" content="c:/Users/dongyibo/tcipsh_docs/image-20210428161127038.png">
+<meta property="article:published_time" content="2021-09-25T16:06:15.854Z">
+<meta property="article:modified_time" content="2021-09-25T16:02:31.658Z">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="c:/Users/dongyibo/tcipsh_docs/image-20210428160620596.png">
 
-<link rel="canonical" href="http://example.com/">
+<link rel="canonical" href="http://example.com/2021/09/26/%E4%B8%80%E4%B8%AAMCDC%E7%BA%A6%E6%9D%9F%E6%B1%82%E8%A7%A3%E7%9A%84%E5%8E%BB%E5%86%97%E4%BD%99%E4%BD%8E%E5%A4%8D%E6%9D%82%E5%BA%A6%E7%AE%97%E6%B3%95%EF%BC%9A/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'en'
   };
 </script>
 
-  <title>Good Good Study</title>
+  <title> | Good Good Study</title>
   
 
 
@@ -138,9 +147,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
@@ -156,10 +166,9 @@
       <meta itemprop="name" content="Good Good Study">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
+        <h1 class="post-title" itemprop="name headline">
           
-            <a href="/2021/09/26/%E4%B8%80%E4%B8%AAMCDC%E7%BA%A6%E6%9D%9F%E6%B1%82%E8%A7%A3%E7%9A%84%E5%8E%BB%E5%86%97%E4%BD%99%E4%BD%8E%E5%A4%8D%E6%9D%82%E5%BA%A6%E7%AE%97%E6%B3%95%EF%BC%9A/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -183,7 +192,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h4 id="一个MC-DC约束求解的去冗余低复杂度算法"><a href="#一个MC-DC约束求解的去冗余低复杂度算法" class="headerlink" title="一个MC/DC约束求解的去冗余低复杂度算法"></a>一个MC/DC约束求解的去冗余低复杂度算法</h4><p>Dong Yibo</p>
+        <h4 id="一个MC-DC约束求解的去冗余低复杂度算法"><a href="#一个MC-DC约束求解的去冗余低复杂度算法" class="headerlink" title="一个MC/DC约束求解的去冗余低复杂度算法"></a>一个MC/DC约束求解的去冗余低复杂度算法</h4><p>Dong Yibo</p>
 <h5 id="背景："><a href="#背景：" class="headerlink" title="背景："></a>背景：</h5><p>在MC/DC求解中，当前CAUT-Core使用的是递归叠加约束并大批量传递给约束求解器。使得是在近似O(2^n)状态空间中进行搜索，得到2n个测试用例。一方面这使得集成测试的时候将因约束组合而使得复杂度爆炸，另一方面也存在冗余测试用例。</p>
 <p>针对这一问题进行检索和探究，找到了一个近似线性的去冗余算法。</p>
 <h5 id="思路："><a href="#思路：" class="headerlink" title="思路："></a>思路：</h5><p>对于表达式和对应取值的一个pair<code>expr = a/\b , val = True/False</code>而言，想要让<code>a</code>能够影响<code>expr</code>判定，需要<code>b = True</code>，并令<code>a = val</code>；同理对于<code>expr = a\/b</code>而言，需要<code>b = False</code>，令<code>a=val</code>。对于析取和合取混杂的任意<code>expr</code>对应的AST，我们首先假定其总val为True，据此决定每一个节点的取值（True or False）。将最左节点（也就是expr中的第一项）取反，整个表达式取值改变。据此我们可以得到针对第一个节点term的一组两例测试用例。</p>
@@ -224,151 +233,30 @@
 </ul>
 <h5 id="Reference"><a href="#Reference" class="headerlink" title="Reference:"></a>Reference:</h5><p>[1] 段飞雷, 吴晓, 张凡, &amp; 董云卫. (2009). Mc/dc最小测试用例集快速生成算法. 计算机工程, 35(017), 40-42.</p>
 
-      
     </div>
 
     
     
     
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/26/This-is-the-very-new-beginning/">
+        
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-    </span>
 
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/09/26/This-is-the-very-new-beginning/" class="post-title-link" itemprop="url">This is the very new beginning!</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2021-09-26 00:02:12 / Modified: 00:02:53" itemprop="dateCreated datePublished" datetime="2021-09-26T00:02:12+08:00">2021-09-26</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Hello World!</p>
-<p>It starts!</p>
-
-      
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/09/26/This-is-the-very-new-beginning/" rel="prev" title="This is the very new beginning!">
+      <i class="fa fa-chevron-left"></i> This is the very new beginning!
+    </a></div>
+      <div class="post-nav-item"></div>
     </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
       </footer>
+    
   </article>
   
   
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/25/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/09/25/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-09-25 23:11:06" itemprop="dateCreated datePublished" datetime="2021-09-25T23:11:06+08:00">2021-09-25</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-
   
 
 
@@ -421,6 +309,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E4%B8%AAMC-DC%E7%BA%A6%E6%9D%9F%E6%B1%82%E8%A7%A3%E7%9A%84%E5%8E%BB%E5%86%97%E4%BD%99%E4%BD%8E%E5%A4%8D%E6%9D%82%E5%BA%A6%E7%AE%97%E6%B3%95"><span class="nav-number">1.</span> <span class="nav-text">一个MC&#x2F;DC约束求解的去冗余低复杂度算法</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%83%8C%E6%99%AF%EF%BC%9A"><span class="nav-number">1.1.</span> <span class="nav-text">背景：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%80%9D%E8%B7%AF%EF%BC%9A"><span class="nav-number">1.2.</span> <span class="nav-text">思路：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0%E6%AD%A5%E9%AA%A4%EF%BC%9A"><span class="nav-number">1.3.</span> <span class="nav-text">算法实现步骤：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%B8%BE%E4%BE%8B%EF%BC%9A"><span class="nav-number">1.4.</span> <span class="nav-text">举例：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Reference"><span class="nav-number">1.5.</span> <span class="nav-text">Reference:</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
