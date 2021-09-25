@@ -144,104 +144,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/26/%E4%B8%80%E4%B8%AAMCDC%E7%BA%A6%E6%9D%9F%E6%B1%82%E8%A7%A3%E7%9A%84%E5%8E%BB%E5%86%97%E4%BD%99%E4%BD%8E%E5%A4%8D%E6%9D%82%E5%BA%A6%E7%AE%97%E6%B3%95%EF%BC%9A/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/09/26/%E4%B8%80%E4%B8%AAMCDC%E7%BA%A6%E6%9D%9F%E6%B1%82%E8%A7%A3%E7%9A%84%E5%8E%BB%E5%86%97%E4%BD%99%E4%BD%8E%E5%A4%8D%E6%9D%82%E5%BA%A6%E7%AE%97%E6%B3%95%EF%BC%9A/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2021-09-26 00:06:15 / Modified: 00:02:31" itemprop="dateCreated datePublished" datetime="2021-09-26T00:06:15+08:00">2021-09-26</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h4 id="一个MC-DC约束求解的去冗余低复杂度算法"><a href="#一个MC-DC约束求解的去冗余低复杂度算法" class="headerlink" title="一个MC/DC约束求解的去冗余低复杂度算法"></a>一个MC/DC约束求解的去冗余低复杂度算法</h4><p>Dong Yibo</p>
-<h5 id="背景："><a href="#背景：" class="headerlink" title="背景："></a>背景：</h5><p>在MC/DC求解中，当前CAUT-Core使用的是递归叠加约束并大批量传递给约束求解器。使得是在近似O(2^n)状态空间中进行搜索，得到2n个测试用例。一方面这使得集成测试的时候将因约束组合而使得复杂度爆炸，另一方面也存在冗余测试用例。</p>
-<p>针对这一问题进行检索和探究，找到了一个近似线性的去冗余算法。</p>
-<h5 id="思路："><a href="#思路：" class="headerlink" title="思路："></a>思路：</h5><p>对于表达式和对应取值的一个pair<code>expr = a/\b , val = True/False</code>而言，想要让<code>a</code>能够影响<code>expr</code>判定，需要<code>b = True</code>，并令<code>a = val</code>；同理对于<code>expr = a\/b</code>而言，需要<code>b = False</code>，令<code>a=val</code>。对于析取和合取混杂的任意<code>expr</code>对应的AST，我们首先假定其总val为True，据此决定每一个节点的取值（True or False）。将最左节点（也就是expr中的第一项）取反，整个表达式取值改变。据此我们可以得到针对第一个节点term的一组两例测试用例。</p>
-<p>考虑到一阶逻辑满足交换律，也即<code>a/\b = b/\a</code>,<code>a\/b=b\/a</code>,故交换左右子树并不影响判定（不影响val）。</p>
-<p>基于这种设计，由于每一个子树的判定由其左子树决定，我们只需要对非第一个节点的每一个节点做这样的操作：</p>
-<p>①向上找到第一个节点F，使得自己属于F的右子树（显然，除了最左节点，其他每个节点都找得到这样一个F），并将这个子树其与F的左子树对换，就可以让自己来到左侧。</p>
-<p>②重复①，直到自己成为最左节点。则此时的用例即为针对这个约束的测试用例。</p>
-<p>③此时，所生成的两组测试用例，必然有一个包含在置换前生成的两个测试用例集合中。（就是两个最左节点用例相同的那组）</p>
-<h5 id="算法实现步骤："><a href="#算法实现步骤：" class="headerlink" title="算法实现步骤："></a>算法实现步骤：</h5><ol>
-<li><p>递归判定初始条件: </p>
- <figure class="highlight ocaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="keyword">function</span> init (expr:表达式) (<span class="keyword">value</span>:真值) -&gt;  <span class="built_in">list</span> <span class="keyword">constraint</span>:=</span><br><span class="line"><span class="keyword">match</span> expr <span class="keyword">with</span>:</span><br><span class="line">| x <span class="comment">(* 不含逻辑连接词，不可再划分 *)</span> =&gt; [(x = <span class="keyword">value</span>)]</span><br><span class="line">| not x =&gt; [(x = !<span class="keyword">value</span>)]</span><br><span class="line">| hd /\ tl =&gt; (init hd <span class="keyword">value</span>) ++ (init tl <span class="type">True</span>) <span class="comment">(* List.append*)</span></span><br><span class="line">| hd \/ tl =&gt; (init hd <span class="keyword">value</span>) ++ (init tl <span class="type">False</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">in</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="literal">()</span> = <span class="comment">(* main 函数*)</span></span><br><span class="line">init expt <span class="type">True</span></span><br></pre></td></tr></table></figure></li>
-<li><p>计算Left(i)</p>
-<p> i = 1 时，Left(i) = NULL</p>
-<p> i &gt; 1 时，首先让指针p指向i，重复使 p =p -&gt;parent，直到p为某节点F的右子节点。Left(i) = F的最左节点。</p>
-<p> P.S. 实际计算中，只需要从上至下，每一次把当前节点的最左子节点存成当前节点的右节点的最左子节点i的Left[i]，好像就可以？</p>
-</li>
-<li><p>初始条件即为第0组用例。对第一个约束真值取反，得到第1组用例。（与第0组对比，形成针对约束1的MC/DC用例组）</p>
-</li>
-<li><p>对于约束<br> $$<br> x \in [2,n]<br> $$<br> 中的每一个约束i，在初始条件中将其初始值取反，并将其原初始值传递给其Left，直到其Left为一号节点。得到的即为针对约束i的对比用例。</p>
-</li>
-</ol>
-<h5 id="举例："><a href="#举例：" class="headerlink" title="举例："></a>举例：</h5><p>对于表达式<code>(a&amp;&amp;b)&amp;&amp;(c&amp;&amp;d) || (e||f)</code>，对应的AST为：</p>
-<p><img src="C:\Users\dongyibo\tcipsh_docs\image-20210428160620596.png" alt="image-20210428160620596"></p>
-<p>初始值计算为：</p>
-<p><img src="C:\Users\dongyibo\tcipsh_docs\image-20210428160750069.png" alt="image-20210428160750069"></p>
-<p>对应的Left计算为：</p>
-<p><img src="C:\Users\dongyibo\tcipsh_docs\image-20210428160808991.png" alt="image-20210428160808991"></p>
-<p>最终生成的最小测试用例集对应的真值表为：</p>
-<p><img src="C:\Users\dongyibo\tcipsh_docs\image-20210428161127038.png" alt="image-20210428161127038"></p>
-<p>分析：</p>
-<ul>
-<li>此算法不需要O(2^n)额外空间复杂度以存储完全真值表，也不使用额外堆栈存储判定的逆波兰式，只需要O(n)存储(i, Left(i) )pair。</li>
-<li>不需要对原布尔表达式进行复杂的转换和范式求解。如果可以O(lg n)求解Left过程，则总复杂度将近似为O(n)。</li>
-</ul>
-<p>不足：</p>
-<ul>
-<li>仍然基于无耦合前提，对于存在耦合的约束，并不能有效处理耦合。</li>
-</ul>
-<h5 id="Reference"><a href="#Reference" class="headerlink" title="Reference:"></a>Reference:</h5><p>[1] 段飞雷, 吴晓, 张凡, &amp; 董云卫. (2009). Mc/dc最小测试用例集快速生成算法. 计算机工程, 35(017), 40-42.</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/26/This-is-the-very-new-beginning/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -434,7 +336,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">2</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
