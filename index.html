@@ -144,6 +144,75 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/Decay&Array-Pointer%20conversion/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/10/15/Decay&Array-Pointer%20conversion/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-10-15 20:52:47 / Modified: 16:34:22" itemprop="dateCreated datePublished" datetime="2021-10-15T20:52:47+08:00">2021-10-15</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Decay-amp-Array-lt-gt-Pointer-conversion"><a href="#Decay-amp-Array-lt-gt-Pointer-conversion" class="headerlink" title="Decay&amp;Array&lt;-&gt;Pointer conversion"></a>Decay&amp;Array&lt;-&gt;Pointer conversion</h2><p>when calling functions in C++, arguments need to undergo type conversions.</p>
+<p>for those parameters passed-by-value, some of the conversion rules are called <code>decay</code>, because in most cases, some type information is lost.</p>
+<h3 id="Examples"><a href="#Examples" class="headerlink" title="Examples"></a>Examples</h3><h4 id="Qualifier-Lost-Decay"><a href="#Qualifier-Lost-Decay" class="headerlink" title="Qualifier Lost Decay"></a>Qualifier Lost Decay</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">func</span>(<span class="keyword">int</span> a);</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> t = <span class="number">1</span>; <span class="comment">// &#x27;volatile&#x27; also.</span></span><br><span class="line">	<span class="built_in">func</span>(t); <span class="comment">// here, the const qualifier is left alone.</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="Array-to-Pointer-Decay"><a href="#Array-to-Pointer-Decay" class="headerlink" title="Array-to-Pointer Decay"></a>Array-to-Pointer Decay</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">print_size</span><span class="params">(<span class="keyword">char</span> arr[<span class="number">64</span>])</span></span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d&quot;</span>,<span class="built_in"><span class="keyword">sizeof</span></span>(arr));</span><br><span class="line">    <span class="comment">// 8</span></span><br><span class="line">    <span class="comment">// the same as sizeof(char*).</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/* because from compiler&#x27;s perspective, arrays cannot be passed by value</span></span><br><span class="line"><span class="comment"> * this function is the same as &quot;void print_size(char*)&quot;</span></span><br><span class="line"><span class="comment"> */</span> </span><br></pre></td></tr></table></figure>
+
+<h4 id="Function-to-Pointer-Decay"><a href="#Function-to-Pointer-Decay" class="headerlink" title="Function-to-Pointer Decay"></a>Function-to-Pointer Decay</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">call</span><span class="params">(<span class="keyword">void</span> callback(<span class="keyword">int</span>), <span class="keyword">int</span> x)</span> </span>&#123;&#125;</span><br><span class="line"><span class="comment">/* the same as</span></span><br><span class="line"><span class="comment"> * void call(void (*callback)(int), int x) &#123;&#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="Explicit-Usage"><a href="#Explicit-Usage" class="headerlink" title="Explicit Usage"></a>Explicit Usage</h3><p>in <code>std::decay</code> .</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/14/git/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -332,10 +401,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2021-09-27 20:28:02 / Modified: 20:45:01" itemprop="dateCreated datePublished" datetime="2021-09-27T20:28:02+08:00">2021-09-27</time>
+              <time title="Created: 2021-09-27 20:28:02" itemprop="dateCreated datePublished" datetime="2021-09-27T20:28:02+08:00">2021-09-27</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-10-15 16:46:20" itemprop="dateModified" datetime="2021-10-15T16:46:20+08:00">2021-10-15</time>
+              </span>
 
           
 
@@ -915,7 +990,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-count">8</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
