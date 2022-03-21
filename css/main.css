@@ -1168,7 +1168,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #cd757e;
+  background: #0bb3af;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -1542,13 +1542,16 @@ pre .javascript .function {
   margin-top: 40px;
   text-align: center;
 }
+.use-motion .post-block {
+  opacity: 0.8;
+}
 .use-motion .post-block,
 .use-motion .pagination,
 .use-motion .comments {
-  opacity: 0;
+  opacity: 0.8;
 }
 .use-motion .post-header {
-  opacity: 0;
+  opacity: 0.8;
 }
 .use-motion .post-body {
   opacity: 0;
@@ -2195,7 +2198,7 @@ ul.breadcrumb li + li:last-child {
   }
 }
 .content-wrap {
-  background: var(--content-bg-color);
+  background: rgba(255,255,255,0.8);
   border-radius: initial;
   box-shadow: initial;
   box-sizing: border-box;
@@ -2438,4 +2441,11 @@ ul.breadcrumb li + li:last-child {
 }
 .links-of-blogroll-item {
   padding: 0;
+}
+body {
+  background: url("https://www.nianyunzm.com/wp-content/uploads/2020/10/%E4%B8%9C%E6%96%B9Project-1.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: 50% 50%;
 }
