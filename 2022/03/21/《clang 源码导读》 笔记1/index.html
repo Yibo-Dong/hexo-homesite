@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="《clang 源码导读》 笔记[TOC] Chapter 1 基础概念关注点 各副标题  “clang” 指的是什么 “clang driver” ：一个驱动器，负责根据简单参数生成复杂参数，并不负责实际编译过程 “clang -cc1”：实际的编译器，实现了编译前后端、汇编等部分 “clang frontend”：编译器前端，指到生成中间代码为止。  诊断信息不同的处理阶段具有不同种类的诊断信息">
+  <meta name="description" content="《clang 源码导读》 笔记1[TOC] Chapter 1 基础概念关注点 各副标题  “clang” 指的是什么 “clang driver” ：一个驱动器，负责根据简单参数生成复杂参数，并不负责实际编译过程 “clang -cc1”：实际的编译器，实现了编译前后端、汇编等部分 “clang frontend”：编译器前端，指到生成中间代码为止。  诊断信息不同的处理阶段具有不同种类的诊断信">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Good Good Study">
+<meta property="og:title" content="clang 源码导读 笔记(1)">
 <meta property="og:url" content="http://example.com/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/index.html">
 <meta property="og:site_name" content="Good Good Study">
-<meta property="og:description" content="《clang 源码导读》 笔记[TOC] Chapter 1 基础概念关注点 各副标题  “clang” 指的是什么 “clang driver” ：一个驱动器，负责根据简单参数生成复杂参数，并不负责实际编译过程 “clang -cc1”：实际的编译器，实现了编译前后端、汇编等部分 “clang frontend”：编译器前端，指到生成中间代码为止。  诊断信息不同的处理阶段具有不同种类的诊断信息">
+<meta property="og:description" content="《clang 源码导读》 笔记1[TOC] Chapter 1 基础概念关注点 各副标题  “clang” 指的是什么 “clang driver” ：一个驱动器，负责根据简单参数生成复杂参数，并不负责实际编译过程 “clang -cc1”：实际的编译器，实现了编译前后端、汇编等部分 “clang frontend”：编译器前端，指到生成中间代码为止。  诊断信息不同的处理阶段具有不同种类的诊断信">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2022-03-21T10:21:18.367Z">
-<meta property="article:modified_time" content="2022-03-21T09:35:48.899Z">
+<meta property="article:modified_time" content="2022-03-21T12:11:27.556Z">
 <meta property="article:author" content="Asp">
 <meta name="twitter:card" content="summary">
 
@@ -45,7 +45,7 @@
   };
 </script>
 
-  <title> | Good Good Study</title>
+  <title>clang 源码导读 笔记(1) | Good Good Study</title>
   
 
 
@@ -164,7 +164,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          
+          clang 源码导读 笔记(1)
         </h1>
 
         <div class="post-meta">
@@ -175,7 +175,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-03-21 18:21:18 / Modified: 17:35:48" itemprop="dateCreated datePublished" datetime="2022-03-21T18:21:18+08:00">2022-03-21</time>
+              <time title="Created: 2022-03-21 18:21:18 / Modified: 20:11:27" itemprop="dateCreated datePublished" datetime="2022-03-21T18:21:18+08:00">2022-03-21</time>
             </span>
 
           
@@ -189,7 +189,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="《clang-源码导读》-笔记"><a href="#《clang-源码导读》-笔记" class="headerlink" title="《clang 源码导读》 笔记"></a>《clang 源码导读》 笔记</h1><p>[TOC]</p>
+        <h1 id="《clang-源码导读》-笔记1"><a href="#《clang-源码导读》-笔记1" class="headerlink" title="《clang 源码导读》 笔记1"></a>《clang 源码导读》 笔记1</h1><p>[TOC]</p>
 <h3 id="Chapter-1-基础概念"><a href="#Chapter-1-基础概念" class="headerlink" title="Chapter 1 基础概念"></a>Chapter 1 基础概念</h3><h4 id="关注点"><a href="#关注点" class="headerlink" title="关注点"></a>关注点</h4><ul>
 <li>各副标题</li>
 </ul>
@@ -227,12 +227,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/10/15/Cmake%E5%88%9D%E6%AD%A5/" rel="prev" title="">
+    <a href="/2021/10/15/Decay&Array-Pointer%20conversion/" rel="prev" title="">
       <i class="fa fa-chevron-left"></i> 
     </a></div>
       <div class="post-nav-item">
-    <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/" rel="next" title="">
-       <i class="fa fa-chevron-right"></i>
+    <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/" rel="next" title="clang 源码导读 笔记(2)">
+      clang 源码导读 笔记(2) <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -292,7 +292,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E3%80%8Aclang-%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B-%E7%AC%94%E8%AE%B0"><span class="nav-number">1.</span> <span class="nav-text">《clang 源码导读》 笔记</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Chapter-1-%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5"><span class="nav-number">1.0.1.</span> <span class="nav-text">Chapter 1 基础概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E6%B3%A8%E7%82%B9"><span class="nav-number">1.0.1.1.</span> <span class="nav-text">关注点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%80%9Cclang%E2%80%9D-%E6%8C%87%E7%9A%84%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.0.1.2.</span> <span class="nav-text">“clang” 指的是什么</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%8A%E6%96%AD%E4%BF%A1%E6%81%AF"><span class="nav-number">1.0.1.3.</span> <span class="nav-text">诊断信息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B9%B3%E5%8F%B0%E4%BF%A1%E6%81%AF%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9Allvm-Triple"><span class="nav-number">1.0.1.4.</span> <span class="nav-text">平台信息的数据结构：llvm::Triple</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%80%9C%E5%B7%A5%E5%85%B7%E9%93%BE%E2%80%9D"><span class="nav-number">1.0.1.5.</span> <span class="nav-text">“工具链”</span></a></li></ol></li></ol></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E3%80%8Aclang-%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B-%E7%AC%94%E8%AE%B01"><span class="nav-number">1.</span> <span class="nav-text">《clang 源码导读》 笔记1</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Chapter-1-%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5"><span class="nav-number">1.0.1.</span> <span class="nav-text">Chapter 1 基础概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E6%B3%A8%E7%82%B9"><span class="nav-number">1.0.1.1.</span> <span class="nav-text">关注点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%80%9Cclang%E2%80%9D-%E6%8C%87%E7%9A%84%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.0.1.2.</span> <span class="nav-text">“clang” 指的是什么</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%8A%E6%96%AD%E4%BF%A1%E6%81%AF"><span class="nav-number">1.0.1.3.</span> <span class="nav-text">诊断信息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B9%B3%E5%8F%B0%E4%BF%A1%E6%81%AF%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9Allvm-Triple"><span class="nav-number">1.0.1.4.</span> <span class="nav-text">平台信息的数据结构：llvm::Triple</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%80%9C%E5%B7%A5%E5%85%B7%E9%93%BE%E2%80%9D"><span class="nav-number">1.0.1.5.</span> <span class="nav-text">“工具链”</span></a></li></ol></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
