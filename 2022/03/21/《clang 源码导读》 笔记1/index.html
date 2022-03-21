@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="《clang 源码导读》 笔记[TOC] Chapter 1 基础概念关注点 各副标题  “clang” 指的是什么 “clang driver” ：一个驱动器，负责根据简单参数生成复杂参数，并不负责实际编译过程 “clang -cc1”：实际的编译器，实现了编译前后端、汇编等部分 “clang frontend”：编译器前端，指到生成中间代码为止。  诊断信息不同的处理阶段具有不同种类的诊断信息">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="《clang 源码导读》 笔记[TOC] Chapter 1 基础概念关注点 各副标题  “clang” 指的是什么 “clang driver” ：一个驱动器，负责根据简单参数生成复杂参数，并不负责实际编译过程 “clang -cc1”：实际的编译器，实现了编译前后端、汇编等部分 “clang frontend”：编译器前端，指到生成中间代码为止。  诊断信息不同的处理阶段具有不同种类的诊断信息">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-03-21T10:21:18.367Z">
+<meta property="article:modified_time" content="2022-03-21T09:35:48.899Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-《clang 源码导读》 笔记1" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/" class="article-date">
+  <time datetime="2022-03-21T10:21:18.367Z" itemprop="datePublished">2022-03-21</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="《clang-源码导读》-笔记"><a href="#《clang-源码导读》-笔记" class="headerlink" title="《clang 源码导读》 笔记"></a>《clang 源码导读》 笔记</h1><p>[TOC]</p>
+<h3 id="Chapter-1-基础概念"><a href="#Chapter-1-基础概念" class="headerlink" title="Chapter 1 基础概念"></a>Chapter 1 基础概念</h3><h4 id="关注点"><a href="#关注点" class="headerlink" title="关注点"></a>关注点</h4><ul>
+<li>各副标题</li>
+</ul>
+<h4 id="“clang”-指的是什么"><a href="#“clang”-指的是什么" class="headerlink" title="“clang” 指的是什么"></a>“clang” 指的是什么</h4><ul>
+<li>“clang driver” ：一个驱动器，负责根据简单参数生成复杂参数，并不负责实际编译过程</li>
+<li>“clang -cc1”：实际的编译器，实现了编译前后端、汇编等部分</li>
+<li>“clang frontend”：编译器前端，指到生成中间代码为止。</li>
+</ul>
+<h4 id="诊断信息"><a href="#诊断信息" class="headerlink" title="诊断信息"></a>诊断信息</h4><p>不同的处理<strong>阶段</strong>具有不同种类的诊断信息，维护在<code>clang/Basic/DiagnosticDriverKinds.inc</code>里：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// DiagnosticDriverKinds.inc</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_aix_default_altivec_abi, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;The default Altivec ABI on AIX is not yet supported, use &#x27;-mabi=vec-extabi&#x27; for the extended Altivec ABI&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_checker_incompatible_analyzer_option, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;checker cannot be enabled with analyzer option &#x27;%0&#x27; == %1&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_checker_option_invalid_input, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;invalid input for checker option &#x27;%0&#x27;, that expects %1&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_checker_option_unknown, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;checker &#x27;%0&#x27; has no option called &#x27;%1&#x27;&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_config_invalid_input, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;invalid input for analyzer-config option &#x27;%0&#x27;, that expects %1 value&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_config_multiple_values, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;analyzer-config option &#x27;%0&#x27; should contain only one &#x27;=&#x27;&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_config_no_value, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;analyzer-config option &#x27;%0&#x27; has a key but no value&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+
+<p>而在<code>DiagnosticIDs.h</code>中同样维护了诊断的类型：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// DiagnosticIDs.h</span></span><br><span class="line"><span class="comment">/// Used for handling and querying diagnostic IDs.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// Can be used and shared by multiple Diagnostics for multiple translation units.</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">DiagnosticIDs</span> : <span class="keyword">public</span> RefCountedBase&lt;DiagnosticIDs&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="comment">/// The level of the diagnostic, after it has been through mapping.</span></span><br><span class="line">  <span class="keyword">enum</span> <span class="title class_">Level</span> &#123;</span><br><span class="line">    Ignored, Note, Remark, Warning, Error, Fatal</span><br><span class="line">  &#125;;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="平台信息的数据结构：llvm-Triple"><a href="#平台信息的数据结构：llvm-Triple" class="headerlink" title="平台信息的数据结构：llvm::Triple"></a>平台信息的数据结构：llvm::Triple</h4><blockquote>
+<p>“helper class for autoconf configuration names”。</p>
+</blockquote>
+<p>Triple 指的是一个string triple：”Architecture + Vendor + OS”</p>
+<p>传入的参数（例如<code>-arch</code>,<code>-target</code>等）会影响生成的triple，</p>
+<h4 id="“工具链”"><a href="#“工具链”" class="headerlink" title="“工具链”"></a>“工具链”</h4><p>这是一个概念性的术语。GNU的minGW，微软的MSCV 都属于“工具链”。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/" data-id="cl10k71es0009t8w8feci5lzi" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          (no title)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/03/17/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Hello World</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">September 2021</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2022/03/17/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/15/Cmake%E5%88%9D%E6%AD%A5/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/15/Decay&Array-Pointer%20conversion/">(no title)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2022 John Doe<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="[SigSEGV]bison - chkstk_ms()在用bison写parser的时候遇到这个问题，感觉并不是偶然现象，有必要仔细探究一下，判断其对于后续的影响。 问题背景在语法分析器中，需要暂存当前已移入(shifted)而尚未被规约(not reduced yet)的符号们。举例说明，当解析a+b*c这个表达式，尚未遇到结尾符号c时，会需要暂时保存前面所有的token。因为只有遇到了c，才">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/2021/10/15/[Sigsegv]chkstk_ms()/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="[SigSEGV]bison - chkstk_ms()在用bison写parser的时候遇到这个问题，感觉并不是偶然现象，有必要仔细探究一下，判断其对于后续的影响。 问题背景在语法分析器中，需要暂存当前已移入(shifted)而尚未被规约(not reduced yet)的符号们。举例说明，当解析a+b*c这个表达式，尚未遇到结尾符号c时，会需要暂时保存前面所有的token。因为只有遇到了c，才">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-10-14T21:54:10.000Z">
+<meta property="article:modified_time" content="2022-03-21T10:22:06.596Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-[Sigsegv]chkstk_ms()" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/10/15/%5BSigsegv%5Dchkstk_ms()/" class="article-date">
+  <time datetime="2021-10-14T21:54:10.000Z" itemprop="datePublished">2021-10-15</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="SigSEGV-bison-chkstk-ms"><a href="#SigSEGV-bison-chkstk-ms" class="headerlink" title="[SigSEGV]bison - chkstk_ms()"></a>[SigSEGV]bison - chkstk_ms()</h1><p>在用bison写parser的时候遇到这个问题，感觉并不是偶然现象，有必要仔细探究一下，判断其对于后续的影响。</p>
+<h3 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h3><p>在语法分析器中，需要暂存当前已移入(shifted)而尚未被规约(not reduced yet)的符号们。举例说明，当解析<code>a+b*c</code>这个表达式，尚未遇到结尾符号<code>c</code>时，会需要暂时保存前面所有的token。因为只有遇到了<code>c</code>，才可以把<code>b*c</code>规约成一个expression，进而和<code>a</code>再规约成更高级的expression。所以在语法分析器设计的时候，为了避免符号栈爆炸，常常会需要仔细考虑表达式和符号的结合性。</p>
+<p>在我个人看来，左右结合是各有利弊的。具体来说：</p>
+<ul>
+<li>左结合，也即形如<code>((a+b)+c)</code>的优点在于，减少语法分析器中暂存的移入栈中的符号的个数。</li>
+<li>右结合，也即形如<code>(a+(b+c))</code>的优点在于，可以在从根节点开始向下访问的时候，首先访问到头结点，并且在每一层都可以实时地知道左节点对右节点的影响。这来自于我的一种直觉：“上文对下文的影响”往往比“下文对上文的影响”多。在一些需要考虑前一个节点是谁来做判断的时候，根据我的经验，这样写更加符合我们的认知习惯。</li>
+</ul>
+<p>我们的parser在var list和statement中都采用了右结合。这在设计之初并没有被我们重视。但在输入规模远超预期的时候，它的影响就体现出来了。</p>
+<h3 id="问题还原"><a href="#问题还原" class="headerlink" title="问题还原"></a>问题还原</h3><p>产生parser的过程并没有任何问题，但在实际parsing的过程中，我们常常会遇到这样的报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cygwin</span></span><br><span class="line">$ ./run xxx.VTL</span><br><span class="line">Segmentation fault(core dumped)</span><br><span class="line"></span><br><span class="line">$ gdb ./run </span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thread 1 <span class="string">&quot;run&quot;</span> received signal SIGSEGV, Segmentation fault.</span><br><span class="line">___chkstk_ms () at /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S:126</span><br><span class="line">126     /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S: No such file or directory.</span><br><span class="line">(gdb) back</span><br><span class="line"><span class="comment">#0  ___chkstk_ms ()</span></span><br><span class="line">    at /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S:126</span><br><span class="line"><span class="comment">#1  0x000000010040108a in VTLparse (</span></span><br><span class="line">    scanner=&lt;error reading variable: Cannot access memory at address 0x10033cd18&gt;, mod=&lt;error reading variable: Cannot access memory at address 0x10033cd10&gt;)</span><br><span class="line">    at parser.tab.c:1112</span><br><span class="line"><span class="comment">#2  0x00000001004099d2 in VTL_parse_module_from_file_to_file (</span></span><br><span class="line">    filename=0xffffcc8c <span class="string">&quot;xxx.VTL&quot;</span>, fp=0x80004a608) at module.c:52</span><br><span class="line"><span class="comment">#3  0x0000000100409a75 in VTL_parse_module_from_file_to_string (</span></span><br><span class="line">    filename=0xffffcc8c <span class="string">&quot;xxx.VTL&quot;</span>) at module.c:64</span><br><span class="line"><span class="comment">#4  0x0000000100409d44 in main (argc=2, argv=0xffffcc40) at main.c:12</span></span><br></pre></td></tr></table></figure>
+
+<p>这个错误并不每次出现，在linux中通常不会出现这个问题，但是在windows下，同样的情况，就有可能会出现这个问题。windows中也并不总是出现这个问题。</p>
+<p>最初遇到这个问题的时候，我用<code>valgrind</code>进行内存检查。发现出现了invalid read &amp; write。经排查，发现是bison中未被纳入语法树的节点并不会被自动回收（例如<code>a+b</code>，加号这个token并不会被我并入二叉树，只是在它们产生的父节点中填一个key叫expr_add）。语法树小的时候这微不足道，大的时候这还是很可观的。于是我手动书写了无效节点的回收，然后<code>valgrind</code>检查中就没有了任何错误。但是问题并没有消除。</p>
+<p>在<code>cygwin</code>中，确乎是出现了疑似内存访问越界的bug（也即这个SIGSEGV）。逐句调试的时候会发现，其出错发生在调用某函数的一瞬间。（甚至无法达到函数中的第一句语句），就好像是函数压栈的时候出了问题。在进行了很多无效的尝试之后，我修改了bison中的栈大小，从<code>8192</code>改成了<code>16384</code>，就解决了问题。由此分析，好像是栈耗尽产生的问题。</p>
+<p>但今天，一个上限设置为<code>163840</code>的parser出现了同样的问题。而我将其改大并没有解决，反倒是改小解决了问题。这就非常让人在意。于是，我去研究了一下这个chkstk_ms()究竟是何方神圣，又是怎么引起了这一次次的错误。</p>
+<h3 id="问题溯源"><a href="#问题溯源" class="headerlink" title="问题溯源"></a>问题溯源</h3><p>在GCC的<a target="_blank" rel="noopener" href="https://github.com/gcc-mirror/gcc/blob/master/libgcc/config/i386/cygwin.S">源码</a>里，<code>__chkstk_ms()</code>的部分是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">// gcc, cygwin.S</span><br><span class="line">___chkstk_ms:</span><br><span class="line">	pushq	%rcx			/* save temps */</span><br><span class="line">	cfi_push(%rcx)</span><br><span class="line">	pushq	%rax</span><br><span class="line">	cfi_push(%rax)</span><br><span class="line">	cmpq	$0x1000, %rax		/* &gt; 4k ?*/</span><br><span class="line">	leaq	24(%rsp), %rcx		/* point past return addr */</span><br><span class="line">	jb	2f</span><br><span class="line"></span><br><span class="line">1:	subq	$0x1000, %rcx  		/* yes, move pointer down 4k */</span><br><span class="line">	orq	$0x0, (%rcx)   		/* probe there */</span><br><span class="line">	subq	$0x1000, %rax  	 	/* decrement count */</span><br><span class="line">	cmpq	$0x1000, %rax</span><br><span class="line">	ja	1b			/* and do it again */</span><br><span class="line"></span><br><span class="line">2:	subq	%rax, %rcx</span><br><span class="line">	orq	$0x0, (%rcx)		/* less than 4k, just peek here */</span><br><span class="line"></span><br><span class="line">	popq	%rax</span><br><span class="line">	cfi_pop(%rax)</span><br><span class="line">	popq	%rcx</span><br><span class="line">	cfi_pop(%rcx)</span><br><span class="line">	ret</span><br><span class="line">	cfi_endproc()</span><br></pre></td></tr></table></figure>
+
+<p>所做的是：接受一个栈大小，以rax传入，然后把它调整到一个4k的倍数，然后以4k为大小向下调整。 </p>
+<p>借此分析，我们所遇到的问题是，将一个栈的大小传给了<code>chkstk_ms()</code>后，后者访问了该栈的内存页，但引发了崩溃。这种崩溃，根据MSDN的说法，是由<code>GUARD PAGE</code>产生的。在window中，有<code>GUARD PAGE</code>的设定：在分配了若干长度的一个数据结构后，会紧跟着在后面设置一个<code>GUARD PAGE</code>，以避免越界。其利用CPU的异常机制，将<code>PAGE_PRESET</code>位标志为0，访问该页的时候，就会触发一个<code>\#PAGE FAULT</code> 异常，操作系统的事先定义好的处理函数就会被调用。</p>
+<p>stackdump信息为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Exception: STATUS_STACK_OVERFLOW at rip=00100409E66^M</span><br><span class="line">rax=0000000000148338 rbx=000000018023E7A0 rcx=00000000FFE03A28^M</span><br><span class="line">rdx=00000000FFFFCA78 rsi=0000000000000000 rdi=0000000000000000^M</span><br><span class="line">r8 =0000000000000000 r9 =0000000000000016 r10=0000000100000000^M</span><br><span class="line">r11=00000001004085A2 r12=00000000FFFFCC80 r13=00000000FFFFCDF0^M</span><br><span class="line">r14=0000000000000000 r15=0000000000000000^M</span><br><span class="line">rbp=00000000FFFFCBC0 rsp=00000000FFFFCA10^M</span><br><span class="line">program=\\wsl$\Centos7\root\vtlparser\vtlparser\run, pid 1329, thread ^M</span><br><span class="line">cs=0033 ds=002B es=002B fs=0053 gs=002B ss=002B^M</span><br><span class="line">Stack trace:^M</span><br><span class="line">Frame        Function    Args^M</span><br><span class="line">000FFFFCBC0  00100409E66 (0010040108A, 001004099D2, 00000000000, 00000000003)^M</span><br><span class="line">000FFFFCBC0  00000340338 (001004099D2, 00000000000, 00000000003, 00000000000)^M</span><br><span class="line">000FFFFCBC0  00800038840 (00000000000, 00000000003, 00000000000, 0018015CC05)^M</span><br><span class="line">000FFFFCBC0  0010040108A (00000000003, 00000000000, 0018015CC05, 001802B1E39)^M</span><br><span class="line">000FFFFCBC0  001004099D2 (001800485F2, 00100400000, 00180044AD5, 0010040A5D0)^M</span><br><span class="line">000FFFFCBC0  00100409A75 (00000000000, 00000000000, 001801B885A, 00000000000)^M</span><br><span class="line">000FFFFCBC0  00100409D44 (00000000020, 8080808080808080, 00180049E91, 00180048D30)^M</span><br><span class="line">000FFFFCCE0  00180049EFD (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">000FFFFFFF0  00180047856 (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">000FFFFFFF0  00180047904 (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">End of stack trace</span><br></pre></td></tr></table></figure>
+
+<p>rax为148338，取整为149000，在试图设置一个这个大小的栈时候，访问越界，踩到了guard page上。但这个大小远大于我们设置的大小，这很奇怪。</p>
+<p>而我们去查看bison产生的parser.tab.c，其中是这样写的：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">    <span class="comment">/* The OS might guarantee only one guard page at the bottom of the stack,</span></span><br><span class="line"><span class="comment">       and a page size can be as small as 4096 bytes.  So we cannot safely</span></span><br><span class="line"><span class="comment">       invoke alloca (N) if N exceeds 4096.  Use a slightly smaller number</span></span><br><span class="line"><span class="comment">       to allow for a few compiler-allocated temporary stack slots.  */</span></span><br><span class="line"><span class="meta">#   <span class="keyword">define</span> YYSTACK_ALLOC_MAXIMUM 4032 <span class="comment">/* reasonable circa 2006 */</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/* YYMAXDEPTH -- maximum size the stacks can grow to (effective only</span></span><br><span class="line"><span class="comment">   if the built-in stack extension method is used).</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">   Do not make this value too large; the results are undefined if</span></span><br><span class="line"><span class="comment">   YYSTACK_ALLOC_MAXIMUM &lt; YYSTACK_BYTES (YYMAXDEPTH)</span></span><br><span class="line"><span class="comment">   evaluated with infinite-precision integer arithmetic.  */</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> YYMAXDEPTH</span></span><br><span class="line"><span class="meta"># <span class="keyword">define</span> YYMAXDEPTH 10000</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">       </span><br><span class="line">       </span><br></pre></td></tr></table></figure>
+
+<p>原因就清晰了。</p>
+<p>简而言之，bison的作者认为，操作系统并不一定会在每个页后面（显然，由于虚拟内存的存在，页不一定是连续的）都创造一个guard page，而这会有些危险。所以它设置了，最大的页大小：4032个字节。（这小于linux中普通页的大小4096B，因而在作者看来是安全的）。而当我们把bison的栈的大小开得大于它的时候（也即大于32256），其将可能由于内置的一些运算产生不确定结果。</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>综上，栈开得小的时候，可能会由于移进栈爆炸而出错，开得过大的时候，则可能出现不稳定的错误。Bison本身不认为会有人一次性处理超过一整个内存页的token，但不幸的是我们写了一个右结合，而输入的用例里，VAR LIST可能确实会很大。</p>
+<p>由于改动可能会引起下游的一系列修改（关于这一点的具体工作量存疑），暂时姑且把栈开一个较大值，待后续迫不得已的时候再进行修改。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2021/10/15/[Sigsegv]chkstk_ms()/" data-id="cl10k71ei0005t8w8awv4hto2" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2021/10/15/git/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          (no title)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/10/15/parser%20notes/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title"></div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">September 2021</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2022/03/17/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/15/Cmake%E5%88%9D%E6%AD%A5/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/15/Decay&Array-Pointer%20conversion/">(no title)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2022 John Doe<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

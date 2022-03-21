@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="gitCH1git处理信息的方式： 直接记录快照，而非比较差异。并非保存每一次的新版本与原先版本的差异列表，而是创建一系列“快照”，并保存其索引。 大多数操作本地执行-&gt;  低延时 保证完整性 -&gt; 保存校验和  git中的文件状态 modified ： 已修改，还未保存 staged：已暂存，会保存在下一次提交的快照中 committed：已安全保存  关于配置文件三级配置： &#x2F;et">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/2021/10/15/git/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="gitCH1git处理信息的方式： 直接记录快照，而非比较差异。并非保存每一次的新版本与原先版本的差异列表，而是创建一系列“快照”，并保存其索引。 大多数操作本地执行-&gt;  低延时 保证完整性 -&gt; 保存校验和  git中的文件状态 modified ： 已修改，还未保存 staged：已暂存，会保存在下一次提交的快照中 committed：已安全保存  关于配置文件三级配置： &#x2F;et">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-10-14T21:54:10.000Z">
+<meta property="article:modified_time" content="2022-03-21T10:22:06.622Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-git" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/10/15/git/" class="article-date">
+  <time datetime="2021-10-14T21:54:10.000Z" itemprop="datePublished">2021-10-15</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="git"><a href="#git" class="headerlink" title="git"></a>git</h2><h3 id="CH1"><a href="#CH1" class="headerlink" title="CH1"></a>CH1</h3><h4 id="git处理信息的方式："><a href="#git处理信息的方式：" class="headerlink" title="git处理信息的方式："></a>git处理信息的方式：</h4><ul>
+<li>直接记录快照，而非比较差异。并非保存每一次的新版本与原先版本的差异列表，而是创建一系列“快照”，并保存其索引。</li>
+<li>大多数操作本地执行-&gt;  低延时</li>
+<li>保证完整性 -&gt; 保存校验和</li>
+</ul>
+<h4 id="git中的文件状态"><a href="#git中的文件状态" class="headerlink" title="git中的文件状态"></a>git中的文件状态</h4><ul>
+<li>modified ： 已修改，还未保存</li>
+<li>staged：已暂存，会保存在下一次提交的快照中</li>
+<li>committed：已安全保存</li>
+</ul>
+<h4 id="关于配置文件"><a href="#关于配置文件" class="headerlink" title="关于配置文件"></a>关于配置文件</h4><h5 id="三级配置："><a href="#三级配置：" class="headerlink" title="三级配置："></a>三级配置：</h5><ul>
+<li><code>/etc/gitconfig</code>包含系统上每一个用户和仓库的通用配置。可以通过<code>git config --system</code>来修改</li>
+<li><code>~/.gitconfig</code>只针对当前用户，可以使用<code>--global</code>来修改</li>
+<li><code>.gte/config</code>当前仓库中的config文件，只修改当前的仓库。可以使用<code>--local</code>来实现，为<strong>默认值</strong></li>
+</ul>
+<h5 id="检查配置文件：git-config-list"><a href="#检查配置文件：git-config-list" class="headerlink" title="检查配置文件：git config --list"></a>检查配置文件：<code>git config --list</code></h5><h5 id="设置别名：git-config-global-alias-br-branch-将branch指令设置为br。"><a href="#设置别名：git-config-global-alias-br-branch-将branch指令设置为br。" class="headerlink" title="设置别名：git config --global alias.br branch 将branch指令设置为br。"></a>设置别名：<code>git config --global alias.br branch</code> 将<code>branch</code>指令设置为<code>br</code>。</h5><h3 id="CH2"><a href="#CH2" class="headerlink" title="CH2"></a>CH2</h3><h4 id="提交与修改"><a href="#提交与修改" class="headerlink" title="提交与修改"></a>提交与修改</h4><ul>
+<li><p><code>git add</code>只是提交到暂存区。如果在提交后又做了修改，需要再提交一次。</p>
+</li>
+<li><p><code>git status</code>可以查看文件的修改、新增等。使用<code>git status -s</code>可以简洁地显示，分为两栏，暂存区和工作区。</p>
+</li>
+<li><p><code>git commit</code>会将暂存区归档。<code>-m</code>选项会允许把commit message放在同一行。如果想要跳过暂存，可以使用<code>-a</code>来提交，会自动暂存并提交所有已经被追踪过的文件</p>
+</li>
+<li><p><code>git rm</code>可以从暂存区中删除文件，在下一次提交后，就不会再纳入版本管理了。如果是已经commit过的，则需要<code>-f</code>。如果想从暂存区移除，但仍然保留在本地（例如，写错.gitignore导致上传了一系列无意义文件），使用<code>git rm --cached</code>有效。</p>
+</li>
+<li><p><code>git mv</code>会让git意识到一次renaming操作。</p>
+</li>
+<li><p><code>git log</code>可以查看修改的日志，而<code>-p</code>选项会显示每一次所引入的差异。<code>-2</code>会限制只显示最近两次提交。如果想查看简略的统计信息，可以使用<code>--stat</code>选项。还有<code>--pretty</code>选项，可以修改展示历史的方式。甚至使用format来定制。</p>
+</li>
+<li><p><code>git last</code>可以直接查看最后一次提交。</p>
+</li>
+</ul>
+<h4 id="忽略文件"><a href="#忽略文件" class="headerlink" title="忽略文件"></a>忽略文件</h4><ul>
+<li><code>.gitignore</code>可以配置一系列的规则。</li>
+<li>以<code>#</code>开头会被忽略</li>
+<li><code>!</code>表示取反。例如<code>*.a</code>忽略了所有的.a文件，而<code>!lib.a</code>可以要求追踪lib.a文件z</li>
+<li><code>*</code>表示零个或多个任意字符，<code>**</code>表示任意中间目录</li>
+<li><code>/xx</code>只会匹配当前目录下的xx，而<code>xx</code>则会递归地忽略所有目录下的xx</li>
+</ul>
+<h4 id="查看差异"><a href="#查看差异" class="headerlink" title="查看差异"></a>查看差异</h4><ul>
+<li><code>git diff</code>可以查看尚未暂存的文件中有哪些更新</li>
+<li><code>git diff --staged</code>查看已经暂存的文件中有哪些更新</li>
+</ul>
+<h4 id="撤销操作"><a href="#撤销操作" class="headerlink" title="撤销操作"></a>撤销操作</h4><ul>
+<li><code>git commit --amend</code>可以修改commit message，或者是补交文件。</li>
+<li><code>git reset HEAD xxx</code>可以将暂存区中的xxx重置回HEAD（也就是上一次所提交）的状态。</li>
+<li><code>git checkout -- xxx</code>可以将本地对xxx的修改完全取消（恢复上一次的样子），这意味着本地修改会<strong>全部木大</strong>。</li>
+</ul>
+<h4 id="关于远端仓库"><a href="#关于远端仓库" class="headerlink" title="关于远端仓库"></a>关于远端仓库</h4><ul>
+<li><code>git remote</code>可以查看所有的远端服务器。<code>-v</code>可以显示远端的git对应的url。</li>
+<li><code>git remote add &lt;shortname&gt; &lt;url&gt;</code>可以添加远端仓库，同时指定一个方便的简写。</li>
+<li><code>git fetch</code>可以拉取仓库中没有的信息。</li>
+<li><code>git pull</code>适用于当前分支设置了追踪远程分支的情况，会自动地拉取并合并。<code>git clone</code>会自动设置本地master分支跟踪远端master分支。</li>
+<li><code>git push</code>可以将分支推送到远端。</li>
+<li><code>git remote show origin</code>会查看远程仓库的URL与追踪信息。</li>
+<li><code>git remote rename</code> 可以修改远程仓库的简写名。</li>
+</ul>
+<h4 id="打标签"><a href="#打标签" class="headerlink" title="打标签"></a>打标签</h4><h5 id="标签有两种："><a href="#标签有两种：" class="headerlink" title="标签有两种："></a>标签有两种：</h5><ul>
+<li>lightweight，轻量级标签，只是一个特定提交的引用，操作方式为<code>git tag &lt;version&gt;</code>即可。</li>
+<li>annotated，附注标签，是数据库中的一个完整对象，支持签名、校验等操作。操作方式为<code>git tag -a &lt;version&gt; -m &quot;message&quot;</code></li>
+</ul>
+<p>想要查看标签，可以使用<code>git show</code>。lightweight只会有提交的信息，annotated会有附注的信息和作者信息等。</p>
+<p>同样可以给过去的分支打标签，只需要<code>git tag &lt;hash&gt;</code>就可以了。</p>
+<p>标签并不会被默认地推送到远端，需要使用<code>git push origin &lt;tag&gt;</code>来推送特定标签, 或者使用<code>git push origin --tags</code>来推送所有标签。如果想要删除，<code>git tag -d &lt;tag&gt;</code>可以删除本地的标签，<code>git push origin --delete &lt;tag&gt;</code>删除远端标签。</p>
+<p>标签可以协助检出(<code>checkout</code>)，但最好不要直接在某标签上修改后提交，因为这会使得新提交不属于任何分支，且无法通过除了指定哈希以外的方法访问。</p>
+<h4 id="CH3-分支管理"><a href="#CH3-分支管理" class="headerlink" title="CH3 分支管理"></a>CH3 分支管理</h4><p>在提交的时候，git会计算每一个子目录的校验和，然后把它们保存成一个树状结构的对象集合。其中有三种对象：</p>
+<ul>
+<li>blob对象：记录每一个文件快照</li>
+<li>树对象会记录文件结构，指向各个文件；</li>
+<li>提交对象会记录本次提交的相关信息，指向树对象。提交对象中也会记录上一次提交的对象。</li>
+</ul>
+<p>git的分支说白了就是一些指针。<code>HEAD</code>也就是相当于一个本地分支的别名。</p>
+<h5 id="分支操作："><a href="#分支操作：" class="headerlink" title="分支操作："></a>分支操作：</h5><ul>
+<li>创建分支：<code>git branch xxx</code>。默认地并不会自动切换到新分支上去。</li>
+<li>查看分支：<code>git log --decorate</code>可以查看当前各个分支指向的对象。<code>git branch</code>本身会查看当前分支的列表。<code>-v</code>选项还会额外查看每个分支的最后一次提交。<code>--merged</code>可以查看已合并的分支，<code>--no-merged</code>可以查看未合并的。</li>
+<li>切换分支：<code>git checkout xxx</code> 这样<code>HEAD</code>就会指向xxx了。如果需要新建一个并切换，使用<code>-b</code>参数。</li>
+<li>删除分支：<code>git branch -d xxx</code>来删除分支。</li>
+<li>合并分支：<code>git merge xxx</code> 把xxx分支合并入当前分支。<ul>
+<li>如果其中一个沿着往前走可以到达另一个，那么合并的时候会“快进”（fast-forward）。</li>
+<li>如果在过去某个公共祖先之后分叉了，则git将进行一次“三方合并”。它将创建一个新的快照，并且自动创建一个提交指向它（于是，这个提交有不止一个父提交）。<ul>
+<li>当然，这个三方合并并不一定可以自动完成。如果两个方向上对同一个地方作了不同的修改，就会需要手动消除冲突。这时候使用<code>git status</code>可以查看含有未解决冲突的文件。而本地修改消除冲突以后，<code>git status</code>会变成”all conflicts fixed but you are still merging”</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h5 id="远程分支"><a href="#远程分支" class="headerlink" title="远程分支"></a>远程分支</h5><ul>
+<li>使用<code>git remote show &lt;remote&gt;</code>来查看分支的详细信息。</li>
+<li>远程追踪分支：它们是远程分支的引用，以<code>&lt;remote&gt;/&lt;branch&gt;</code>形式命名。它记录了最后一次和远端通信时候的<code>&lt;branch&gt;</code>的状态。当其它用户修改了<code>&lt;branch&gt;</code>时，我们自己的<code>&lt;remote&gt;/&lt;branch&gt;</code>并不会移动。如果需要更新，只需要<code>git fetch &lt;remote&gt;</code>就可以。</li>
+<li>推送：<code>git push origin &lt;branch&gt;</code>可以把本地的<code>&lt;branch&gt;</code>推送到远端。它实际上是一个简写，意思是将本地的<code>&lt;branch&gt;</code>推送到远端的<code>&lt;branch&gt;</code>上。</li>
+<li>追踪分支：从一个远程分支检出一个本地分支会自动创建追踪（被追踪者，被称作”上游”，也即upstream），从而可以使得<code>git pull</code>自动地识别去哪里抓取。而当需要手动创建的时候，可以使用<code>git checkout -b &lt;branch&gt; &lt;remote&gt;/&lt;branch&gt;</code>。或者直接在检出的时候使用<code>--track</code>。</li>
+<li>删除分支：<code>--delete</code></li>
+</ul>
+<h5 id="变基-rebase"><a href="#变基-rebase" class="headerlink" title="变基(rebase)"></a>变基(rebase)</h5><p>与merge创建一个三方合并不同，变基会提取在某分支上的所有修改，然后移到另一分支上。合并结果并没有区别，但是会使得提交历史更加整洁，这在尤其是在向远端推送的时候非常重要。同样，也可以将a上衍生出的b上衍生出的c中的修改并到a上而不连带着改b中的修改(<code>git rebase --onto a b c</code>)。</p>
+<p>但是需要注意的是，变基的实质是丢弃一些现有的提交，相应地新建一些内容一样但实质不同的提交。所以，<strong>如果提交存在于自己的仓库以外，可能有别人基于这些提交来开发，就不要变基</strong>。否则，将会可能使得别人不得不再次把手上的修改和变基的提交整合，无穷无极。如果真的遇到了，可以使用变基解决变基。</p>
+<h4 id="CH4-服务器搭建"><a href="#CH4-服务器搭建" class="headerlink" title="CH4 服务器搭建"></a>CH4 服务器搭建</h4><p>暂略。</p>
+<h4 id="CH5-工作流"><a href="#CH5-工作流" class="headerlink" title="CH5 工作流"></a>CH5 工作流</h4><p>集成管理者工作流：每一个人从官方仓库中克隆出来，然后可以提交到自己的仓库，并请求官方仓库的维护者拉取更新合并到主项目。在此基础上，可以分级。</p>
+<h5 id="提交原则："><a href="#提交原则：" class="headerlink" title="提交原则："></a>提交原则：</h5><ul>
+<li>不含空白</li>
+<li>单个提交解决单个问题</li>
+<li>写好的message，一行摘要+若干行必要的详细解释。</li>
+</ul>
+<h4 id="不同模式："><a href="#不同模式：" class="headerlink" title="不同模式："></a>不同模式：</h4><ul>
+<li><p>私有项目：具有管理权限，直接以集成管理者模式</p>
+</li>
+<li><p>共有项目：没有更新权限，fork出一个项目，提交到该仓库，发pull request。</p>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2021/10/15/git/" data-id="cl10k71eh0004t8w81uhrhyz9" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2021/10/15/compile%20KLEE%20from%20source/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          (no title)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/10/15/%5BSigsegv%5Dchkstk_ms()/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title"></div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">September 2021</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2022/03/17/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/15/Cmake%E5%88%9D%E6%AD%A5/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/15/Decay&Array-Pointer%20conversion/">(no title)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2022 John Doe<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

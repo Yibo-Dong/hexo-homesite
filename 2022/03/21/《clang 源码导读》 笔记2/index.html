@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Chapter2 Clang Driver及总体流程供参考的链接：https:&#x2F;&#x2F;clang.llvm.org&#x2F;docs&#x2F;DriverInternals.html#low-overhead 代码的位置：clang&#x2F;driver&#x2F;Driver.h 关注点 clang driver 的整体流程 PipeLine分为哪几步？  clang-driver 流程前面介绍过，clang driver本身是一个">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Chapter2 Clang Driver及总体流程供参考的链接：https:&#x2F;&#x2F;clang.llvm.org&#x2F;docs&#x2F;DriverInternals.html#low-overhead 代码的位置：clang&#x2F;driver&#x2F;Driver.h 关注点 clang driver 的整体流程 PipeLine分为哪几步？  clang-driver 流程前面介绍过，clang driver本身是一个">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://clang.llvm.org/docs/_images/DriverArchitecture.png">
+<meta property="og:image" content="https://pic2.zhimg.com/80/v2-15d13d5b18dc0aa8477189ef24f6cf8d_720w.jpg">
+<meta property="article:published_time" content="2022-03-21T10:21:18.369Z">
+<meta property="article:modified_time" content="2022-03-21T10:28:22.896Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://clang.llvm.org/docs/_images/DriverArchitecture.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.4.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-《clang 源码导读》 笔记2" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/" class="article-date">
+  <time datetime="2022-03-21T10:21:18.369Z" itemprop="datePublished">2022-03-21</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Chapter2-Clang-Driver及总体流程"><a href="#Chapter2-Clang-Driver及总体流程" class="headerlink" title="Chapter2 Clang Driver及总体流程"></a>Chapter2 Clang Driver及总体流程</h3><p>供参考的链接：<a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/DriverInternals.html#low-overhead">https://clang.llvm.org/docs/DriverInternals.html#low-overhead</a></p>
+<p>代码的位置：<code>clang/driver/Driver.h</code></p>
+<h4 id="关注点"><a href="#关注点" class="headerlink" title="关注点"></a>关注点</h4><ul>
+<li>clang driver 的整体流程</li>
+<li>PipeLine分为哪几步？</li>
+</ul>
+<h4 id="clang-driver-流程"><a href="#clang-driver-流程" class="headerlink" title="clang-driver 流程"></a>clang-driver 流程</h4><p>前面介绍过，clang driver本身是一个“驱动”器，并不负责真正的编译工作，而是组装指令（无论是编译器的还是ld的命令）。</p>
+<p>clang driver的处理流程分为若干阶段：解析参数（Parse） -&gt; 构造编译流水线（Pipeline） -&gt; 选择工具和文件名（Bind）-&gt;  转换参数（Translation）-&gt; 调用工具执行任务（Execute）。整体流程如下：</p>
+<p><img src="https://clang.llvm.org/docs/_images/DriverArchitecture.png" alt="Driver Architecture Diagram"></p>
+<p>以下简单介绍每个步骤。</p>
+<h5 id="Parse"><a href="#Parse" class="headerlink" title="Parse"></a>Parse</h5><p>解析输入的命令行参数，生成参数列表（arglist），无须赘述。</p>
+<h5 id="PipeLine"><a href="#PipeLine" class="headerlink" title="PipeLine"></a>PipeLine</h5><p>根据输入的文件和类型，构建出一系列的action。</p>
+<p>借助<code>clang -ccc-print-phases</code> 可以查看action。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang-7 -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br><span class="line">2: compiler, &#123;1&#125;, ir</span><br><span class="line">3: backend, &#123;2&#125;, assembler</span><br><span class="line">4: assembler, &#123;3&#125;, object</span><br><span class="line">5: linker, &#123;4&#125;, image</span><br><span class="line"></span><br><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang-7 -c -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br><span class="line">2: compiler, &#123;1&#125;, ir</span><br><span class="line">3: backend, &#123;2&#125;, assembler</span><br><span class="line">4: assembler, &#123;3&#125;, object</span><br><span class="line"></span><br><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang -S -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br><span class="line">2: compiler, &#123;1&#125;, ir</span><br><span class="line">3: backend, &#123;2&#125;, assembler</span><br><span class="line"></span><br><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang -emit-llvm -S -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br><span class="line">2: compiler, &#123;1&#125;, ir</span><br><span class="line">3: backend, &#123;2&#125;, ir</span><br><span class="line"></span><br><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang -E -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br></pre></td></tr></table></figure>
+
+<p>可见，<code>-c</code>指令到assembler就中止了，并没有最后的link步骤，而<code>-S</code>则进一步缺少了IR之后的汇编步骤。<code>-emit-llvm</code>会停留在生成IR， <code>-E</code>则是仅进行预处理。</p>
+<p>关于action的步骤，有一张图可以参考：</p>
+<p><img src="https://pic2.zhimg.com/80/v2-15d13d5b18dc0aa8477189ef24f6cf8d_720w.jpg" alt="img"></p>
+<h5 id="Bind"><a href="#Bind" class="headerlink" title="Bind"></a>Bind</h5><p>对于不同的action，选择对应的工具和文件名。</p>
+<p>借助<code>clang -ccc-print-bindings</code>可以查看对应的工具和文件名。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang-7 -ccc-print-bindings   t0.c</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&quot;x86_64-pc-linux-gnu&quot;</span> - <span class="string">&quot;clang&quot;</span>, inputs: [<span class="string">&quot;t0.c&quot;</span>], output: <span class="string">&quot;/tmp/t0-47c0f3.o&quot;</span></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&quot;x86_64-pc-linux-gnu&quot;</span> - <span class="string">&quot;GNU::Linker&quot;</span>, inputs: [<span class="string">&quot;/tmp/t0-47c0f3.o&quot;</span>], output: <span class="string">&quot;a.out&quot;</span></span></span><br></pre></td></tr></table></figure>
+
+<p>例如这里，编译所采用的工具是clang（作为编译器的clang，即clang -cc1），而linker采用的是GNU的linker。</p>
+<h5 id="Translation"><a href="#Translation" class="headerlink" title="Translation"></a>Translation</h5><p>根据编译参数，为每个tool生成参数。</p>
+<p>借助<code>-###</code>选项可以查看内部的指令。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang-7 -### t0.c</span><br><span class="line">clang version 7.0.1-12 (tags/RELEASE_701/final)</span><br><span class="line">Target: x86_64-pc-linux-gnu</span><br><span class="line">Thread model: posix</span><br><span class="line">InstalledDir: /usr/bin</span><br><span class="line"> &quot;/usr/lib/llvm-7/bin/clang&quot; &quot;-cc1&quot; &quot;-triple&quot; &quot;x86_64-pc-linux-gnu&quot; &quot;-emit-obj&quot; &quot;-mrelax-all&quot; &quot;-disable-free&quot; &quot;-disable-llvm-verifier&quot; &quot;-discard-value-names&quot; &quot;-main-file-name&quot; &quot;t0.c&quot; &quot;-mrelocation-model&quot; &quot;static&quot; &quot;-mthread-model&quot; &quot;posix&quot; &quot;-mdisable-fp-elim&quot; &quot;-fmath-errno&quot; &quot;-masm-verbose&quot; &quot;-mconstructor-aliases&quot; &quot;-munwind-tables&quot; &quot;-fuse-init-array&quot; &quot;-target-cpu&quot; &quot;x86-64&quot; &quot;-dwarf-column-info&quot; &quot;-debugger-tuning=gdb&quot; &quot;-resource-dir&quot; &quot;/usr/lib/llvm-7/lib/clang/7.0.1&quot; &quot;-internal-isystem&quot; &quot;/usr/local/include&quot; &quot;-internal-isystem&quot; &quot;/usr/lib/llvm-7/lib/clang/7.0.1/include&quot; &quot;-internal-externc-isystem&quot; &quot;/usr/include/x86_64-linux-gnu&quot; &quot;-internal-externc-isystem&quot; &quot;/include&quot; &quot;-internal-externc-isystem&quot; &quot;/usr/include&quot; &quot;-fdebug-compilation-dir&quot; &quot;/home/dyb/clang_source_tests&quot; &quot;-ferror-limit&quot; &quot;19&quot; &quot;-fmessage-length&quot; &quot;120&quot; &quot;-fobjc-runtime=gcc&quot; &quot;-fdiagnostics-show-option&quot; &quot;-fcolor-diagnostics&quot; &quot;-o&quot; &quot;/tmp/t0-25b43e.o&quot; &quot;-x&quot; &quot;c&quot; &quot;t0.c&quot; &quot;-faddrsig&quot;</span><br><span class="line"> &quot;/usr/bin/ld&quot; &quot;--build-id&quot; &quot;--eh-frame-hdr&quot; &quot;-m&quot; &quot;elf_x86_64&quot; &quot;-dynamic-linker&quot; &quot;/lib64/ld-linux-x86-64.so.2&quot; &quot;-o&quot; &quot;a.out&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/crt1.o&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/crti.o&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/crtbegin.o&quot; &quot;-L/usr/bin/../lib/gcc/x86_64-linux-gnu/9&quot; &quot;-L/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu&quot; &quot;-L/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../../lib64&quot; &quot;-L/lib/x86_64-linux-gnu&quot; &quot;-L/lib/../lib64&quot; &quot;-L/usr/lib/x86_64-linux-gnu&quot; &quot;-L/usr/lib/../lib64&quot; &quot;-L/usr/lib/x86_64-linux-gnu/../../lib64&quot; &quot;-L/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../..&quot; &quot;-L/usr/lib/llvm-7/bin/../lib&quot; &quot;-L/lib&quot; &quot;-L/usr/lib&quot; &quot;/tmp/t0-25b43e.o&quot; &quot;-lgcc&quot; &quot;--as-needed&quot; &quot;-lgcc_s&quot; &quot;--no-as-needed&quot; &quot;-lc&quot; &quot;-lgcc&quot; &quot;--as-needed&quot; &quot;-lgcc_s&quot; &quot;--no-as-needed&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/crtend.o&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/crtn.o&quot;</span><br></pre></td></tr></table></figure>
+
+<p>例如这里：</p>
+<p>给到<code>clang -cc1</code>的参数：<code>-triple x86_64-pc-linux-gnu ...</code> 。对应Triple中<code>Arc+Vend+OS</code>的结构。</p>
+<p>给到<code>ld</code>的参数：<code>--build-id --eh-frame-hdr ... -o  a.out </code>。</p>
+<h5 id="Execution"><a href="#Execution" class="headerlink" title="Execution"></a>Execution</h5><p>实际创建进线程，调用不同tool，根据翻译出的参数，执行不同的任务。</p>
+<h3 id="clang的流程"><a href="#clang的流程" class="headerlink" title="clang的流程"></a>clang的流程</h3><p>在调用”clang”的过程中，发生的流程大致为：</p>
+<ul>
+<li>clang 以driver身份被调用</li>
+<li>clang driver根据传入的参数创建job，例如“编译任务”, “链接任务”</li>
+<li>创建进程，执行对应的job</li>
+</ul>
+<p>实际流程：</p>
+<ul>
+<li><p>main先创建诊断信息（Diagnostic）实例。</p>
+</li>
+<li><p>随后创建Driver实例负责后续任务：</p>
+<ul>
+<li><p>使用Driver中的<code>BuildCompilation</code>生成需要执行的命令</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// BuildCompilation - Construct a compilation object for a command</span></span><br><span class="line"><span class="comment">/// line argument vector.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// \return A compilation, or 0 if none was built for the given</span></span><br><span class="line"><span class="comment">/// argument vector. A null return value does not necessarily</span></span><br><span class="line"><span class="comment">/// indicate an error condition, the diagnostics should be queried</span></span><br><span class="line"><span class="comment">/// to determine if an error occurred.</span></span><br><span class="line"><span class="function">Compilation *<span class="title">BuildCompilation</span><span class="params">(ArrayRef&lt;<span class="type">const</span> <span class="type">char</span> *&gt; Args)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>调用<code>ParseArgString()</code>解析参数</li>
+<li>调用<code>LoadConfigFile()</code>解析配置文件</li>
+<li>调用<code>ComputeTargetTriple()</code>，获得triple</li>
+<li>根据triple获得对应的ToolChain。</li>
+<li>创建<code>compilation</code>。</li>
+<li>通过<code>BuildInputs()</code>函数获取输入文件(因为driver可以同时编译多个源码文件)，依据是扩展名”.m”。</li>
+<li>通过<code>BuildUniversalActions</code>构建JobAction。</li>
+<li>通过<code>BuildJobs</code>构建<code>Jobs</code></li>
+</ul>
+</li>
+<li><p>Driver构造完Jobs以后，会通过Driver的<code>ExecuteCompilation</code>执行命令</p>
+</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/" data-id="cl10k71ej0007t8w84twyfeb9" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title"></div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">September 2021</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2022/03/17/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/15/Cmake%E5%88%9D%E6%AD%A5/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/15/Decay&Array-Pointer%20conversion/">(no title)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2022 John Doe<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
