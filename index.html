@@ -114,6 +114,11 @@
     <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
 
   </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
         <li class="menu-item menu-item-archives">
 
     <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
@@ -146,10 +151,224 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B03/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/04/25/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B03/" class="post-title-link" itemprop="url">clang 源码导读 笔记(3)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-25 11:59:45 / Modified: 12:00:04" itemprop="dateCreated datePublished" datetime="2022-04-25T11:59:45+08:00">2022-04-25</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Chapter-3-Clang-Driver-参数解析"><a href="#Chapter-3-Clang-Driver-参数解析" class="headerlink" title="Chapter 3 Clang Driver 参数解析"></a>Chapter 3 Clang Driver 参数解析</h2><p>关注点：</p>
+<ul>
+<li>各个类负责的职责</li>
+<li>类之间的流程</li>
+</ul>
+<h4 id="类"><a href="#类" class="headerlink" title="类"></a>类</h4><ul>
+<li><p><code>Info</code>：保存了<code>Option</code>信息的结构体</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Entry for a single option instance in the option data table.</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Info</span> &#123;</span><br><span class="line">    <span class="comment">/// A null terminated array of prefix strings to apply to name while</span></span><br><span class="line">    <span class="comment">/// matching.</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *<span class="type">const</span> *Prefixes;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *Name;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *HelpText;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *MetaVar;</span><br><span class="line">    <span class="type">unsigned</span> ID;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> Kind;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> Param;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> Flags;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">short</span> GroupID;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">short</span> AliasID;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *AliasArgs;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *Values;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>Option</code>： 表示驱动程序接受的选项的一种形式。每一个具体的Arg实例对应一个特定的Option实例<br>见<a target="_blank" rel="noopener" href="https://www.llvm.org/doxygen/Option_8h_source.html#l00051">https://www.llvm.org/doxygen/Option_8h_source.html#l00051</a></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Option - Abstract representation for a single form of driver</span></span><br><span class="line"><span class="comment">/// argument.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// An Option class represents a form of option that the driver</span></span><br><span class="line"><span class="comment">/// takes, for example how many arguments the option has and how</span></span><br><span class="line"><span class="comment">/// they can be provided. Individual option instances store</span></span><br><span class="line"><span class="comment">/// additional information about what group the option is a member</span></span><br><span class="line"><span class="comment">/// of (if any), if the option is an alias, and a number of</span></span><br><span class="line"><span class="comment">/// flags. At runtime the driver parses the command line into</span></span><br><span class="line"><span class="comment">/// concrete Arg instances, each of which corresponds to a</span></span><br><span class="line"><span class="comment">/// particular Option instance.</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>Arg</code>：保存具体的option信息。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// A concrete instance of a particular driver option.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// The Arg class encodes just enough information to be able to</span></span><br><span class="line"><span class="comment">/// derive the argument values efficiently.</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>OptTable</code>：提供了“一层”隔离，在保存足够信息的同时，尽可能lazily-created <code>Option</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Provide access to the Option info table.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// The OptTable class provides a layer of indirection which allows Option</span></span><br><span class="line"><span class="comment">/// instance to be created lazily. In the common case, only a few options will</span></span><br><span class="line"><span class="comment">/// be needed at runtime; the OptTable class maintains enough information to</span></span><br><span class="line"><span class="comment">/// parse command lines without instantiating Options, while letting other</span></span><br><span class="line"><span class="comment">/// parts of the driver still use Option instances where convenient.</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>InputArgList</code>：保留输入的原始参数和解析后的参数列表，是ArgList的子类</p>
+</li>
+<li><p><code>DriverOptTable</code> 记录driver相关的info信息，是OptTable的子类</p>
+</li>
+</ul>
+<h4 id="详解"><a href="#详解" class="headerlink" title="详解"></a>详解</h4><h5 id="DriverOptTable"><a href="#DriverOptTable" class="headerlink" title="DriverOptTable"></a>DriverOptTable</h5><p>是OptTable的子类。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/04/25/CSA%20Guide%20CN%20CH1/" class="post-title-link" itemprop="url">Clang Static Analyzer · Checker Developer's Guide [CN] (1)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-25 11:59:45 / Modified: 12:04:45" itemprop="dateCreated datePublished" datetime="2022-04-25T11:59:45+08:00">2022-04-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CSA/" itemprop="url" rel="index"><span itemprop="name">CSA</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="CH-1-关于CSA-Clang-Static-Analyzer-的简介"><a href="#CH-1-关于CSA-Clang-Static-Analyzer-的简介" class="headerlink" title="CH 1 关于CSA(Clang Static Analyzer)的简介"></a>CH 1 关于CSA(Clang Static Analyzer)的简介</h3><p>以LLVM的体系结构为基础，Clang编译器的功能远远不只是一个将C&#x2F;C++&#x2F;Obj-C代码转换成二进制可执行文件那么简单。Clang允许用户在编译过程上“挂钩”，并借此得到编译器在编译的每个阶段所产生的数据的详细信息。换句话说，如果你想了解更多关于你写的程序的信息，那么最好就直接去问编译器——而clang是愿意回答你的问题的，前提是你问了正确的问题。</p>
+<p>clang工具的应用之一，是自动寻找程序中的缺陷，并提供警告。很多警告是你的编译器本身可能不会提供的。比如说，<code>clang-tidy</code>会通过检查程序中的语法来寻找代码风格、安全性或可移植性上的问题。</p>
+<p>CSA是另一个寻找程序缺陷的工具。在源码基础上，CSA会在不编译的基础上虚拟执行程序中的一部分（就如同阅读源码并想象如果跑起来是什么样），并报告那些虚拟执行中出现的问题。因为任何真实程序的实际行为都取决于外部因素，例如输入值、随机数和库组件的行为(对于这些因素，源代码并不总是可获取的)，所以分析器引擎用<strong>代数符号</strong>表示未知值，并基于这些符号进行符号计算，并得出导致程序出错的对应符号值条件。  </p>
+<p>因此，CSA能够发现罕见的程序路径上的深层次bug。 这些路径极容易被手动测试人员或自动化测试套件忽略。一旦发现了一个bug，分析器就会绘制出导致这个bug的整条path，并在每个条件语句上标出跳转方向。  </p>
+<p>不过需要注意的是，分析器只能找到那些定制去找的bug。 如果没有定制的话，即使遇到问题，分析也只会进一步进行，不会报告。 对于分析器发现的每一种特定类型的缺陷，例如空指针的解引用或缓冲区溢出，都存在一个特殊的模块(checker)，使得分析器在分析期间对此类缺陷作出响应。</p>
+<p>因此，从本质上讲，分析器核心负责以符号方式执行程序，而checker订阅它们感兴趣的事件、检查基于符号值的假设是否满足、并在不满足的时候发出警告。</p>
+<p>这意味着不仅可以使用分析器本身来发现缺陷，而且还可以使它适应特定的项目。 例如，可以定制自己的强制规则，或者发现特定库API的误用。为了做到这一点，需要分析器编写一个新的检查器模块。这不太困难，因为CSA是一个非常容易的工具，而这个指南应该能够帮到你。</p>
+<h4 id="1-1-从写一个简单的checker上手"><a href="#1-1-从写一个简单的checker上手" class="headerlink" title="1.1 从写一个简单的checker上手"></a>1.1 从写一个简单的checker上手</h4><p>作为开始，我们先写一个极简的checker，检查C++标准中的这一条：</p>
+<blockquote>
+<p>basic.start.main.c : main()函数在程序中不应当被使用</p>
+</blockquote>
+<p>换言之，<code>main()</code>函数不应当是递归的，程序永远不应该调用<code>main()</code>，否则将是一个UB(Undefined Behavior)。寻找这个错误的过程听起来比较简单，就是在程序中寻找是否存在名字为”main”的函数调用。要出现这种错误，变成这需要不小心把一个指向main函数的指针放进了变量，把指针传了传，并最终不小心调用了：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Example_Test.c</span></span><br><span class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">int</span><span class="params">(*<span class="type">main_t</span>)</span><span class="params">(<span class="type">int</span>, <span class="type">char</span> **)</span></span>;</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="type">main_t</span> foo = main;</span><br><span class="line">    <span class="type">int</span> exit_code = <span class="built_in">foo</span>(argc, argv); <span class="comment">// actually calls main()</span></span><br><span class="line">    <span class="keyword">return</span> exit_code;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>即使在这个简单的例子中，分析器的path-sensitive引擎相比较简单的语法检查也有不小的优势。让我们来看看CSA是如何检查的。</p>
+<p>实际上，即使把main函数赋值给一个指针也算是对main函数的一种“使用”。但这里出于教学意义，我们会找出它是否真的被使用了：</p>
+<p>第一步，我们来把这个checker的定义加到checker列表里。在clang的文件树里打开<code>lib/StaticAnalyzer/Checkers/Checkers.td</code>，并找个地方增加一个对checker的描述，例如在<code>alpha.core</code>分类里：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">MainCallChecker</span> : Checker &lt;<span class="string">&quot; MainCall&quot;</span>&gt;,</span><br><span class="line">    HelpText &lt;<span class="string">&quot;Check for calls to main&quot;</span>&gt;,</span><br><span class="line">    DescFile &lt;<span class="string">&quot; MainCallChecker.cpp&quot;</span>&gt;;    </span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>在重新编译clang以后，我们写的checker就应该出现在了clang的checker列表里。使用<code>clang -cc1 -analyzer-checker-help</code> 可以查看：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">~ $ clang -cc1 -analyzer -checker -<span class="built_in">help</span> </span><br><span class="line">OVERVIEW: Clang Static Analyzer Checkers List </span><br><span class="line">USAGE: -analyzer -checker &lt;CHECKER or PACKAGE ,...&gt;</span><br><span class="line">CHECKERS: </span><br><span class="line">...</span><br><span class="line">alpha.core.MainCall     Check <span class="keyword">for</span> calls to main</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中，”alpha.core.MainCallChecker” 就是我们注册的checker的名字。一旦checker被注册了，它就可以通过CSA的命令行选项来启用，描述也会显示在help里。”alpha.core”是checker的分类名，例如，<code>-analyzer-checker alpha.core</code>会启用这个分类中的所有checker。</p>
+<p>第二步，我们把checker的代码加入构建过程中：在<code>lib/StaticAnalyzer/Checkers/CMakeLists.txt</code>里，添加checker文件：</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">MainCallChecker.cpp</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>最后，在checker文件里添加功能代码，我们之后会详细解释：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;ClangSACheckers.h&quot;</span> </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;clang/StaticAnalyzer/Core/BugReporter/BugType.h&quot;</span> </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;clang/StaticAnalyzer/Core/Checker.h&quot;</span> </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;clang/StaticAnalyzer/Core/PathSensitive/CallEvent.h&quot;</span> </span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;clang/StaticAnalyzer/Core/PathSensitive/CheckerContext.h&quot;</span> </span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> clang; </span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> clang::ento;</span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">MainCallChecker</span> : <span class="keyword">public</span> Checker &lt;check::PreCall &gt; &#123; </span><br><span class="line">        <span class="keyword">mutable</span> std::unique_ptr &lt;BugType &gt; BT;    </span><br><span class="line">    <span class="keyword">public</span>:   </span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">checkPreCall</span><span class="params">(<span class="type">const</span> CallEvent &amp;Call , CheckerContext &amp;C)</span> <span class="type">const</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> MainCallChecker :: <span class="built_in">checkPreCall</span>(<span class="type">const</span> CallEvent &amp;Call,CheckerContext &amp;C) <span class="type">const</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="type">const</span> IdentifierInfo *II = Call.<span class="built_in">getCalleeIdentifier</span> ())</span><br><span class="line">        <span class="keyword">if</span> (II-&gt;<span class="built_in">isStr</span>(<span class="string">&quot;main&quot;</span>)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!BT)</span><br><span class="line">            BT.<span class="built_in">reset</span>(<span class="keyword">new</span> <span class="built_in">BugType</span>(<span class="keyword">this</span> , <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>)); </span><br><span class="line">            ExplodedNode *N = C.<span class="built_in">generateErrorNode</span>();</span><br><span class="line">        	<span class="keyword">auto</span> Report = llvm:: make_unique &lt;BugReport &gt;(*BT, BT -&gt;<span class="built_in">getName</span>(), N);</span><br><span class="line">            C.<span class="built_in">emitReport</span>(std::<span class="built_in">move</span>(Report ));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> ento:: <span class="built_in">registerMainCallChecker</span>(CheckerManager &amp;Mgr) &#123; </span><br><span class="line">    Mgr.registerChecker &lt;MainCallChecker &gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在编译clang之后，你就可以运行CSA、启用这个checker，并且看到结果了：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">~ $ clang -cc1 -analyze -analyzer -checker=alpha.core Example_Test.c Example_Test.c:4:19: warning: Call to main</span><br><span class="line">int exit_code = foo(argc , argv); // actually calls main ()! </span><br><span class="line">				^~~~~~~~~~~~~~~</span><br><span class="line">1 warning generated</span><br></pre></td></tr></table></figure>
+
+<h4 id="1-2-样例checker代码注解"><a href="#1-2-样例checker代码注解" class="headerlink" title="1.2 样例checker代码注解"></a>1.2 样例checker代码注解</h4><p>现在我们来看看<code>MainCallChecker</code>内部是如何工作的。<code>MainCallChecker</code>是一个path-snesitive的checker，它可以检测在不同的程序路径下，“流经”不同变量的值，并分析出所执行的路径是哪条，这点我们在前面的样例中已经提及。</p>
+<h5 id="1-2-1-声明一个checker类"><a href="#1-2-1-声明一个checker类" class="headerlink" title="1.2.1 声明一个checker类"></a>1.2.1 声明一个checker类</h5><p>CSA中，checker的实现是通过继承类模板<code>Checker&lt;...&gt;</code>的，模板的参数表明了哪些回调函数是checker所订阅的。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">MainCallChecker</span> : <span class="keyword">public</span> Checker &lt;check::PreCall &gt; &#123; </span><br><span class="line">        <span class="keyword">mutable</span> std::unique_ptr &lt;BugType &gt; BT;    </span><br><span class="line">    <span class="keyword">public</span>:   </span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">checkPreCall</span><span class="params">(<span class="type">const</span> CallEvent &amp;Call , CheckerContext &amp;C)</span> <span class="type">const</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Checker类定义通常被放进匿名的命名空间来避免不同的checker同时被装载进CSA的时候发生名称冲突。</p>
+<p><code>MainCallChecker</code>订阅了<code>checker::PreCall</code>这个事件。在每一次CSA的引擎遇到一个函数调用时，在进一步分析它之前就会调用在Checker中定义的<code>CheckPreCall()</code>回调函数。</p>
+<h5 id="1-2-2-实现checker的回调函数"><a href="#1-2-2-实现checker的回调函数" class="headerlink" title="1.2.2 实现checker的回调函数"></a>1.2.2 实现checker的回调函数</h5><p>现在我们来看看<code>checkPreCall(...)</code>这个回调函数的实现：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> MainCallChecker :: <span class="built_in">checkPreCall</span>(<span class="type">const</span> CallEvent &amp;Call,CheckerContext &amp;C) <span class="type">const</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="type">const</span> IdentifierInfo *II = Call.<span class="built_in">getCalleeIdentifier</span> ())</span><br><span class="line">        <span class="keyword">if</span> (II-&gt;<span class="built_in">isStr</span>(<span class="string">&quot;main&quot;</span>)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!BT)</span><br><span class="line">            BT.<span class="built_in">reset</span>(<span class="keyword">new</span> <span class="built_in">BugType</span>(<span class="keyword">this</span> , <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>)); </span><br><span class="line">            ExplodedNode *N = C.<span class="built_in">generateErrorNode</span>();</span><br><span class="line">        	<span class="keyword">auto</span> Report = llvm:: make_unique &lt;BugReport &gt;(*BT, BT -&gt;<span class="built_in">getName</span>(), N);</span><br><span class="line">            C.<span class="built_in">emitReport</span>(std::<span class="built_in">move</span>(Report ));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>参数中的<code>CallEvent</code>这个结构里包含了遇到函数调用这个事件时所有CSA内核所收集的信息，例如关于被调用函数、实参值的信息。</p>
+<p>由于我们的checker是path-sensitive的，我们能得到的信息比直接看语法树要多很多。具体来说，即使用函数指针它也能知道被调用对象，因为CSA内核在这条执行路径上预测了这个指针的值。</p>
+<p>在函数体的第一行，我们从<code>CallEvent</code>中拿到被调用函数的标识符信息(<code>IdentifierInfo</code>)。为了以防万一，我们把它放在if条件中。</p>
+<p>在第二行，我们判断我们遇到的标识符的名字是不是”main”。我们只想找以”main”为名字的函数，所以后续所有的检查都应该在这一点的基础之上。</p>
+<p>检查的逻辑大概就是这样，剩下的工作就是为用户生成错误报告。</p>
+<h5 id="1-2-3-抛出错误报告"><a href="#1-2-3-抛出错误报告" class="headerlink" title="1.2.3 抛出错误报告"></a>1.2.3 抛出错误报告</h5><p>为了生成错误报告，我们使用回调中的另一个对象，CheckerContext。它是一个多功能组件，checker可以使用它来获取分析信息，并改变分析流程。  </p>
+<p>在checker中有一个变量BT，它存储一个“错误类型”，用于区分bug的来源。 一个检查器可能有多种错误类型; 为了提高性能，它们通常被存储在检查器中并重新使用。 在第24行，检查器将其错误类型结构BT初始化为一个名为“Call to main”的错误，在类别“示例检查器”内，除非它已经初始化。  </p>
+<h5 id="1-2-4-注册checker"><a href="#1-2-4-注册checker" class="headerlink" title="1.2.4 注册checker"></a>1.2.4 注册checker</h5><p>最后，需要添加一点精妙的代码来让分析器启动的时候生成checker实例。你可以使用这部分代码来在整个TU(Translation Unit)中禁用特定的checker。以下的代码创建一个（且仅一个）<code>MainCallChecker</code>的实例来传递给将要展开的事件：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> ento:: <span class="built_in">registerMainCallChecker</span>(CheckerManager &amp;Mgr) &#123; </span><br><span class="line">    Mgr.registerChecker &lt;MainCallChecker&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="1-3-把checker编译成一个独立的模块"><a href="#1-3-把checker编译成一个独立的模块" class="headerlink" title="1.3 把checker编译成一个独立的模块"></a>1.3 把checker编译成一个独立的模块</h4><p>前面我们已经完成了在clang内部编译checker的尝试。还有另一种方法是把checker编译成一个独立插件。这种情况下，你不需要修改<code>Checkers.td</code>和<code>CmakeLists.txt</code>来运行checker。你只需要把自己的checker编译成一个独立的库，在运行时装载它。</p>
+<p>如果这样做，你的目标是把你的checker编译成一个clang的plugin。你不需要挂<code>ClangSACheckers.h</code>头，而是需要挂<code>CheckerRegistry.h</code>头:</p>
+<p><code>#include &quot;clang/StaticAnalyzer/Core/CheckerRegistry.h&quot;</code></p>
+<p>然后在库中定义一个外部可见的函数来动态地完成checker注册的工作：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> <span class="string">&quot;C&quot;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">clang_registerCheckers</span> <span class="params">(CheckerRegistry &amp;registry)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">registry.<span class="built_in">addChecker</span>&lt;MainCallChecker&gt;(<span class="string">&quot;alpha.core.MainCallChecker&quot;</span>,<span class="string">&quot;Checks for calls to main&quot;</span>);   </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>clang的API的版本与plugin的API的版本要保持一致（换句话说，你不能把旧版本API的插件装载进新版本clang里）。所以说，checker需要保存它的版本信息在一个外部可见的变量<code>clang_analyzerAPIVersionString</code>中，来完成兼容性检查：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> <span class="type">const</span> <span class="type">char</span> clang_analyzerAPIVersionString[]= CLANG_ANALYZER_API_VERSION_STRING;</span><br></pre></td></tr></table></figure>
+
+<p>当你使用<code>clang -cc1 -load YourChecker.so</code>之后，对应的Checker就会装载进列表中，并可以被激活。</p>
+<h4 id="1-4-延伸阅读"><a href="#1-4-延伸阅读" class="headerlink" title="1.4 延伸阅读"></a>1.4 延伸阅读</h4><p><a target="_blank" rel="noopener" href="http://llvm.org/doxygen">http://llvm.org/doxygen</a></p>
+<p><a target="_blank" rel="noopener" href="http://clang.llvm.org/doxygen">http://clang.llvm.org/doxygen</a></p>
+<p><a target="_blank" rel="noopener" href="http://clang-analyzer.llvm.org/checker_dev_manual.html">http://clang-analyzer.llvm.org/checker_dev_manual.html</a></p>
+<p><a target="_blank" rel="noopener" href="http://llvm.org/devmtg/2012-11/videos/Zaks-Rose-Checker24Hours.mp4">http://llvm.org/devmtg/2012-11/videos/Zaks-Rose-Checker24Hours.mp4</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
       <meta itemprop="name" content="Asp">
       <meta itemprop="description" content="">
     </span>
@@ -269,7 +488,7 @@
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
       <meta itemprop="name" content="Asp">
       <meta itemprop="description" content="">
     </span>
@@ -350,7 +569,7 @@
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/Decay&Array-Pointer%20conversion/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
       <meta itemprop="name" content="Asp">
       <meta itemprop="description" content="">
     </span>
@@ -425,7 +644,7 @@
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/Cmake%E5%88%9D%E6%AD%A5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
       <meta itemprop="name" content="Asp">
       <meta itemprop="description" content="">
     </span>
@@ -509,7 +728,7 @@
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/compile%20KLEE%20from%20source/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
       <meta itemprop="name" content="Asp">
       <meta itemprop="description" content="">
     </span>
@@ -652,7 +871,7 @@
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/git/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
       <meta itemprop="name" content="Asp">
       <meta itemprop="description" content="">
     </span>
@@ -823,7 +1042,7 @@
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/hello-world/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
       <meta itemprop="name" content="Asp">
       <meta itemprop="description" content="">
     </span>
@@ -900,7 +1119,7 @@
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/[Sigsegv]chkstk_ms()/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
       <meta itemprop="name" content="Asp">
       <meta itemprop="description" content="">
     </span>
@@ -988,192 +1207,11 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/parser%20notes/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Asp">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/10/15/parser%20notes/" class="post-title-link" itemprop="url">文章分类</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-10-15 05:54:10" itemprop="dateCreated datePublished" datetime="2021-10-15T05:54:10+08:00">2021-10-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-03-21 20:10:58" itemprop="dateModified" datetime="2022-03-21T20:10:58+08:00">2022-03-21</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Parser-notes"><a href="#Parser-notes" class="headerlink" title="Parser notes"></a>Parser notes</h1><p>写了两个parser以后，和之前做math parser时相比有了更多的一些想法。</p>
-<p>不得不承认，math parser是一个较为brutal的不完全成品。这种brutal体现在于：</p>
-<ul>
-<li>对于节点的结构设计较为随意，没有考虑清楚如何有效利用信息。这使得后续书写二阶key的时候做了不少dirty work，并且破坏了设计结构。</li>
-<li>对于结合性的设计较为随意，没有考虑到底层的栈实现。、</li>
-<li>对于内存的分配和回收并没有在意，彼时对于这个东西知之甚少。</li>
-<li>对于线程安全概念没有了解。</li>
-<li>对于跨平台没有什么认知。</li>
-<li>对于异常处理和错误恢复也没有考虑</li>
-<li>对于链接全然不知。</li>
-</ul>
-<p>以下分别简单说说</p>
-<h3 id="节点设计"><a href="#节点设计" class="headerlink" title="节点设计"></a>节点设计</h3><p>写VTL parser的时候，在自己尽量偷懒的内在驱动下，我仔细考虑设计出了一个较为合理的结构，对于terminal和none-terminal复用相同的存储结构，保证POD的基础上没有浪费空间。这要求设计的结构尽可能“极简”且“易扩展”。最终我设计的结构是：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">node</span> &#123;</span></span><br><span class="line">    <span class="type">int</span> nodekey, <span class="comment">// the key of it</span></span><br><span class="line">    <span class="type">int</span> length_or_subkey, <span class="comment">// if terminal, then length ,else subkey</span></span><br><span class="line">    <span class="type">char</span>* text, <span class="comment">// for terminal, the char array to store infomation,</span></span><br><span class="line">    			<span class="comment">// for non-terminal, null</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">node</span>* <span class="title">left</span>,</span></span><br><span class="line"><span class="class">    <span class="keyword">struct</span> <span class="title">node</span>* <span class="title">right</span></span></span><br><span class="line"><span class="class">&#125;;</span></span><br></pre></td></tr></table></figure>
-
-<p>相比较最初的结构，对于none-terminal我复用了length字段来存一个二阶的key（这个想法受到IEEE802.3协议的启发，它在Ethernet V2ray的报文格式基础上把协议字段类型修改为了帧长）。这可以有利于在知道“expr”的情况下知道具体是“add expr”还是”sub expr”。</p>
-<p>值得一提的是，在书写二阶key的时候，我认为让它们各不相交是极大的利大于弊的（不值一提，但这总让我觉得可以给正确性证明提供一些方便，虽然这和separation logic最多算形式上有点点相似性）。例如：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">section1</span> &#123;</span>pivot1_l, KEY1_1,KEY1_2,pivot1_r&#125;;</span><br><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">section2</span> &#123;</span>pivot2_l = pivot1_r + offset, KEY2_1, key2_2, pivot2_r&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>这里的offset我最初没有考虑到，直接取了0，而后续需要parse一个极为类似的文法，只不过是要加一点关键字的时候，修改parser加key就不得不顺延后续的每一个key，这对于parser本身当然没有什么，但是对AST的处理函数就没有那么幸运，就需要顺延着修改了。适当留一点保留量可能会是文法不确定时候的好做法。</p>
-<h3 id="结合性设计"><a href="#结合性设计" class="headerlink" title="结合性设计"></a>结合性设计</h3><p>这就值得多说一点了。</p>
-<blockquote>
-<p>在语法分析器中，需要暂存当前已移入(shifted)而尚未被规约(not reduced yet)的符号们。举例说明，当解析<code>a+b*c</code>这个表达式，尚未遇到结尾符号<code>c</code>时，会需要暂时保存前面所有的token。因为只有遇到了<code>c</code>，才可以把<code>b*c</code>规约成一个expression，进而和<code>a</code>再规约成更高级的expression。所以在语法分析器设计的时候，为了避免符号栈爆炸，常常会需要仔细考虑表达式和符号的结合性。</p>
-<p>在我个人看来，左右结合是各有利弊的。具体来说：</p>
-<ul>
-<li>左结合，也即形如<code>((a+b)+c)</code>的优点在于，减少语法分析器中暂存的移入栈中的符号的个数。</li>
-<li>右结合，也即形如<code>(a+(b+c))</code>的优点在于，可以在从根节点开始向下访问的时候，首先访问到头结点，并且在每一层都可以实时地知道前一个节点是谁。这来自于我的一种直觉：“上文对下文的影响”往往比“下文对上文的影响”多。在一些需要考虑前一个节点是谁来做判断的时候，根据我的经验，这样写更加符合我们的认知习惯。</li>
-</ul>
-</blockquote>
-<p>我的parser在list设计中都采用了右结合。这在设计之初并没有被我重视……但在输入规模远超预期的时候，它的影响就体现出来了。由于不读到最后一个就不会规约，右结合这个糟糕的设计让我的符号栈迅速的爆掉了。如果可以的话，还是左结合好一点。</p>
-<h3 id="内存分配和回收"><a href="#内存分配和回收" class="headerlink" title="内存分配和回收"></a>内存分配和回收</h3><p>全局回收就不多说了，在写完以后应该对整棵语法树递归回收。考虑到我们设计的节点中同样存在动态结构，同样需要回收节点中的text数组，此处不再赘述。</p>
-<p>但是在这样写完以后，用valgrind测试，同样会存在很多内存泄漏。最初我以为是线程安全给我带来的副作用，但仔细分析以后发现其实并不是，而是在于：所有没有并入语法树的节点并不会被回收。</p>
-<p>例如：</p>
-<figure class="highlight ocaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">expr : var</span><br><span class="line">	&#123; <span class="comment">(* ?? *)</span>&#125; </span><br><span class="line">    | expr <span class="type">ADD</span> expr</span><br><span class="line">    &#123; $$ = f($<span class="number">1</span>,$<span class="number">3</span>);&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这会带来一个副作用，就是ADD这个token，在被识别的时候是被构建了节点的，但是由于并没有进行回收，它永远地离开了我们……</p>
-<p>正确的写法我理解里应当是对于这些仅供模式识别的token，在过程中及时释放。例如：</p>
-<figure class="highlight ocaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">expr : var</span><br><span class="line">	&#123; <span class="comment">(* ?? *)</span>&#125; </span><br><span class="line">    | expr <span class="type">ADD</span> expr</span><br><span class="line">    &#123; $$ = f($<span class="number">1</span>,$<span class="number">3</span>);</span><br><span class="line">      free_node($<span class="number">2</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="线程安全"><a href="#线程安全" class="headerlink" title="线程安全"></a>线程安全</h3><p>这也是之前没有考虑过的点。在多线程调用parser的时候，会因为有符号冲突而出现识别错误。而flex&amp;bison实际上是可以通过设置”pure-parser”来实现线程安全。对于以union作为语法树节点来说，所有的yylval.a都要改成yylval-&gt;a，且任何全局变量的定义我认为都可能危险，应该尽力避免。</p>
-<p>在要求线程安全的时候，yylex()函数的形式会有一些变化，对于lexer和parser的交互中传递的信息需要手动设置，好在bison中有十分好用的接口，只需要在开头加一些内容就可以了。</p>
-<h3 id="跨平台"><a href="#跨平台" class="headerlink" title="跨平台"></a>跨平台</h3><p>这部分其实到现在也没有多少认知。我想说的大概是“不要因为代码在自己的设备可以跑就认为它也可以跑在别的设备上”。最初让我意识到这一点的是我把换行符的识别写死成了LF，使得windows上总是报一些奇怪的错误。其次，栈上限（ulimit -s）有时候也会有一些差异，会使得同样的parser在不同环境上的表现大有差别。此外，bison&amp;flex的版本，编译器的版本，也都是需要考虑的问题。这个目前我仍然知之甚浅，需要进一步学习。</p>
-<h3 id="异常处理和错误恢复"><a href="#异常处理和错误恢复" class="headerlink" title="异常处理和错误恢复"></a>异常处理和错误恢复</h3><p>错误恢复其实是基于这样一种直觉：即使输入了一些能让天塌下来的奇怪的东西，也能找到下一个可信的恢复点。而当读入一个语法错误的时候，就应该直接扔掉接下来的输入，一直到下一个可信恢复点。但是从词法意义上，我认为可信恢复点不一定存在。</p>
-<p>关于异常处理我理解的则是，出现错误的东西应该有对应的好的处理办法。最初，我写的是调用yyerror打出error message，但这会让人很难去找到底错在哪里。我之后在每一个token被识别时或者每一次规约的时候设定了<code>#ifdef lexer/parser_DBG</code>来做一些printing work，借助最后一个正确识别的符号来判断出错在哪里。但这同样需要肉眼去搜索。所以后续我借助bison提供的接口追加了location,在报错的时候通过行号来提供更进一步的信息。</p>
-<p>而报错之后，同样需要考虑终止程序的事情。之前我写的总是exit()，但是作为动态链接库使用的时候这显然是不可接受的。调用yyterminate()同样会遇到词法和语法分别有一个报错的情况。最终我设置了一个标志位来解决这个问题。</p>
-<h3 id="链接中的符号冲突"><a href="#链接中的符号冲突" class="headerlink" title="链接中的符号冲突"></a>链接中的符号冲突</h3><p>在同一个程序中调用多个parser的动态链接库的时候，会出现符号冲突。在我们实践过程中，windows本地没有出现问题（存疑）， 但是linux的服务器端出现了问题。关于链接中的符号冲突，我也知之甚少。linux中的nm指令可以扫描动态链接库对外暴露的符号名和类型，这可能回有利于进一步深入这个问题。这里我的解决方案是，把它们的所有yy开头的函数和符号名用宏的方式保护起来。</p>
-<p>实际上，bison中是提供了这个功能的，它称之为multi-parser。对于这个问题，bison提供了两种解决方案：</p>
-<ul>
-<li>使用条件匹配语法，来让多个文法共存在一个parser里。</li>
-<li>使用宏定义保护头。</li>
-</ul>
-<p>具体的优劣在其手册中也有表述。而为了不让我写的key的枚举有打架的危险，我选择后一种。在进行了保护以后，多个parser就是相对安全地各自为战不会互相调用了。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/26/This-is-the-very-new-beginning/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Asp">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/09/26/This-is-the-very-new-beginning/" class="post-title-link" itemprop="url">This is the very new beginning!</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-09-26 00:02:12" itemprop="dateCreated datePublished" datetime="2021-09-26T00:02:12+08:00">2021-09-26</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-03-21 18:22:06" itemprop="dateModified" datetime="2022-03-21T18:22:06+08:00">2022-03-21</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Hello World!</p>
-<p>It starts!</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+  </nav>
 
 
 
@@ -1230,6 +1268,8 @@
 
       <div class="site-overview-wrap sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Asp"
+      src="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
   <p class="site-author-name" itemprop="name">Asp</p>
   <div class="site-description" itemprop="description"></div>
 </div>
@@ -1238,9 +1278,13 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-count">12</span>
           <span class="site-state-item-name">posts</span>
         </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">categories</span>
       </div>
   </nav>
 </div>
