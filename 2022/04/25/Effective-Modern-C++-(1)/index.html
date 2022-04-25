@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Effective Modern C++ (1) Deducing TypesBriefEver since C++11, type deducing has been an important mechanism. mechanism may not be accurate, for the deducing behavior varies in different scene. This ch">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Effective Modern C++ (1)">
+<meta property="og:url" content="http://example.com/2022/04/25/Effective-Modern-C++-(1)/index.html">
+<meta property="og:site_name" content="Good Good Study">
+<meta property="og:description" content="Effective Modern C++ (1) Deducing TypesBriefEver since C++11, type deducing has been an important mechanism. mechanism may not be accurate, for the deducing behavior varies in different scene. This ch">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-04-25T11:00:00.000Z">
+<meta property="article:modified_time" content="2022-04-25T12:53:34.732Z">
+<meta property="article:author" content="Asp">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/04/25/Effective-Modern-C++-(1)/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Effective Modern C++ (1) | Good Good Study</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Good Good Study</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Day Day up</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/Effective-Modern-C++-(1)/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Effective Modern C++ (1)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-25 19:00:00 / Modified: 20:53:34" itemprop="dateCreated datePublished" datetime="2022-04-25T19:00:00+08:00">2022-04-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Effective-Modern-C/" itemprop="url" rel="index"><span itemprop="name">Effective Modern C++</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Effective-Modern-C-1-Deducing-Types"><a href="#Effective-Modern-C-1-Deducing-Types" class="headerlink" title="Effective Modern C++ (1) Deducing Types"></a>Effective Modern C++ (1) Deducing Types</h2><h3 id="Brief"><a href="#Brief" class="headerlink" title="Brief"></a>Brief</h3><p>Ever since C++11, type deducing has been an important mechanism. <code>mechanism</code> may not be accurate, for the deducing behavior varies in different scene. This chapter introduce the mechanisms in detail from different aspects, separated in different items.</p>
+<h3 id="Item-1-template-type-deduction"><a href="#Item-1-template-type-deduction" class="headerlink" title="Item 1 template type deduction"></a>Item 1 template type deduction</h3><h4 id="Prototype"><a href="#Prototype" class="headerlink" title="Prototype:"></a>Prototype:</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(ParamType param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(expr);</span><br></pre></td></tr></table></figure>
+
+<h3 id=""><a href="#" class="headerlink" title=""></a></h3><h4 id="Mechanism"><a href="#Mechanism" class="headerlink" title="Mechanism:"></a>Mechanism:</h4><ul>
+<li><code>ParamType</code> is a <strong>Reference&#x2F;Pointer</strong>, not universal Reference<ul>
+<li>if <code>expr type</code> is a <strong>reference&#x2F;Pointer</strong>, ignore the reference&#x2F;pointer part.</li>
+<li>then match <code>T</code> against <code>paramtype</code></li>
+</ul>
+</li>
+<li><code>ParamType</code> is a universal Reference<ul>
+<li>if <code>expr</code> is an <strong>lvalue</strong>, <code>T</code> &amp; <code>paramtype</code> down to lvalue references</li>
+<li>if <code>expr</code> is an <strong>rvalue</strong>, apply normal rules.</li>
+</ul>
+</li>
+<li><code>ParamType</code> is neither a pointer nor a reference<ul>
+<li>if expr’s type is a reference, ignore the reference part.</li>
+<li>after that, if <code>expr</code> is const&#x2F;volatile, ignore that. (because here is by value.)</li>
+</ul>
+</li>
+</ul>
+<h4 id="Examples"><a href="#Examples" class="headerlink" title="Examples:"></a>Examples:</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T&amp; param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> cx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>&amp; rx = x;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(x); <span class="comment">// p:int&amp;, T: int</span></span><br><span class="line"><span class="built_in">f</span>(cx); <span class="comment">// p:const int&amp;, T: const int</span></span><br><span class="line"><span class="built_in">f</span>(rx); <span class="comment">// p: const int&amp;, T: const int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="type">const</span> T&amp; param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> cx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>&amp; rx = x;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(x); <span class="comment">// p:const int&amp;, T: int</span></span><br><span class="line"><span class="built_in">f</span>(cx); <span class="comment">// p:const int&amp;, T: int</span></span><br><span class="line"><span class="built_in">f</span>(rx); <span class="comment">// p: const int&amp;, T: int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T* param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>* px = &amp;x;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(&amp;x); <span class="comment">// p:int*, T: int</span></span><br><span class="line"><span class="built_in">f</span>(px); <span class="comment">// p:const int*, T: const int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T&amp;&amp; param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> cx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>&amp; rx = x;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(x);  <span class="comment">// p:int&amp;, T: int&amp;</span></span><br><span class="line"><span class="built_in">f</span>(cx); <span class="comment">// p:const int&amp;, T: const int&amp;</span></span><br><span class="line"><span class="built_in">f</span>(rx); <span class="comment">// p:const int&amp;, T: const int&amp;</span></span><br><span class="line"><span class="built_in">f</span>(<span class="number">27</span>); <span class="comment">// p:int &amp;&amp;, T: int</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> cx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>&amp; rx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">char</span>* <span class="type">const</span> ptr = <span class="string">&quot;const pointer to const object&quot;</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(x);  <span class="comment">// p: int, T: int</span></span><br><span class="line"><span class="built_in">f</span>(cx); <span class="comment">// p: int, T: const int</span></span><br><span class="line"><span class="built_in">f</span>(rx); <span class="comment">// p: int, T: int</span></span><br><span class="line"><span class="built_in">f</span>(ptr);<span class="comment">// p: const char*, T:const char*</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="Notes"><a href="#Notes" class="headerlink" title="Notes:"></a>Notes:</h4><ol>
+<li>That’s why passing a const object to a template taking a T&amp; parameter is safe: the constness of the object becomes part of the type deduced for T.</li>
+<li>Universal Reference down to lvalue reference is the only situation that a template type T is deduced to be a reference.</li>
+<li>The fact that cx and rx can’t be modified says nothing about whether param can be.</li>
+<li>Although functions cannot declare parameters that are truly arrays, they can declare parameters that are references to arrays.</li>
+<li>Arguments that are array or function names decay to pointers, unless they are used to initialize references.</li>
+</ol>
+<h3 id="Item2-auto-type-deduction"><a href="#Item2-auto-type-deduction" class="headerlink" title="Item2 auto type deduction"></a>Item2 auto type deduction</h3><p>only one difference: </p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> x5 = &#123;<span class="number">27</span>&#125;; <span class="comment">// int</span></span><br><span class="line"><span class="keyword">auto</span> x5 = &#123;<span class="number">27</span>&#125;; <span class="comment">// std::initializer_list&lt;int&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>and one hint:</p>
+<p>when in a <strong>function return type</strong> or a lambda parameter, auto implies template type deduction, not auto type deduction</p>
+<h3 id="Item3-decltype"><a href="#Item3-decltype" class="headerlink" title="Item3 decltype"></a>Item3 decltype</h3><p>Usage:</p>
+<ul>
+<li><p>help to compute return type:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Container, <span class="keyword">typename</span> Index&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">func</span><span class="params">(Container&amp; C, Index i)</span></span></span><br><span class="line"><span class="function">-&gt;<span class="title">decltype</span><span class="params">(c[i])</span> <span class="comment">// C++11 : trailing return type</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">authenticateUser</span>();</span><br><span class="line">    <span class="keyword">return</span> c[i]; <span class="comment">// should forward</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>implies not to stripe off the reference. Otherwise, rvalue cannot be assigned.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Container, <span class="keyword">typename</span> Index&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">decltype</span>(<span class="keyword">auto</span>) <span class="title">func</span><span class="params">(Container&amp; C, Index i)</span> <span class="comment">// C++14, actually using &amp;&amp; that can both point to lvalue or rvalue is better</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">authenticateUser</span>();</span><br><span class="line">    <span class="keyword">return</span> c[i]; <span class="comment">// should forward</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>Strategy:</p>
+<ul>
+<li>for lvalue expressions of type T, other than names, reports a type of T&amp;.</li>
+</ul>
+<p>Note:</p>
+<ol>
+<li>C++11 permits return types for single statement lambdas to be deduced, while C++14 extends to all lambdas and all functions.</li>
+<li>auto specifies that the type is to be deduced, and decltype says that decltype rules should be used.</li>
+<li>Putting parentheses around a name can change the type that decltype reports for it.</li>
+</ol>
+<h3 id="Item4-view-deduced-types"><a href="#Item4-view-deduced-types" class="headerlink" title="Item4 view deduced types"></a>Item4 view deduced types</h3><p> Neither of IDE&#x2F;Compiler is completely correct, but the <code>Boost TypeIndex</code> library is accurate.</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/25/CSA%20Guide%20CN%20CH2/" rel="prev" title="Clang Static Analyzer · Checker Developer's Guide [CN] (2)">
+      <i class="fa fa-chevron-left"></i> Clang Static Analyzer · Checker Developer's Guide [CN] (2)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/25/CSA%20Guide%20CN%20CH3/" rel="next" title="Clang Static Analyzer · Checker Developer's Guide [CN] (3)">
+      Clang Static Analyzer · Checker Developer's Guide [CN] (3) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Effective-Modern-C-1-Deducing-Types"><span class="nav-number">1.</span> <span class="nav-text">Effective Modern C++ (1) Deducing Types</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Brief"><span class="nav-number">1.1.</span> <span class="nav-text">Brief</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Item-1-template-type-deduction"><span class="nav-number">1.2.</span> <span class="nav-text">Item 1 template type deduction</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Prototype"><span class="nav-number">1.2.1.</span> <span class="nav-text">Prototype:</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-number">1.3.</span> <span class="nav-text"></span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Mechanism"><span class="nav-number">1.3.1.</span> <span class="nav-text">Mechanism:</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Examples"><span class="nav-number">1.3.2.</span> <span class="nav-text">Examples:</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Notes"><span class="nav-number">1.3.3.</span> <span class="nav-text">Notes:</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Item2-auto-type-deduction"><span class="nav-number">1.4.</span> <span class="nav-text">Item2 auto type deduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Item3-decltype"><span class="nav-number">1.5.</span> <span class="nav-text">Item3 decltype</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Item4-view-deduced-types"><span class="nav-number">1.6.</span> <span class="nav-text">Item4 view deduced types</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Asp"
+      src="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+  <p class="site-author-name" itemprop="name">Asp</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">15</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Asp</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
