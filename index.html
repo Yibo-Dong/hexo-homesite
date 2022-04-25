@@ -114,6 +114,16 @@
     <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
 
   </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
         <li class="menu-item menu-item-categories">
 
     <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
@@ -176,7 +186,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-04-25 17:14:43 / Modified: 17:15:05" itemprop="dateCreated datePublished" datetime="2022-04-25T17:14:43+08:00">2022-04-25</time>
+              <time title="Created: 2022-04-25 19:00:00 / Modified: 18:09:56" itemprop="dateCreated datePublished" datetime="2022-04-25T19:00:00+08:00">2022-04-25</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -426,88 +436,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B03/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
-      <meta itemprop="name" content="Asp">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/04/25/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B03/" class="post-title-link" itemprop="url">clang 源码导读 笔记(3)</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2022-04-25 11:59:45 / Modified: 12:00:04" itemprop="dateCreated datePublished" datetime="2022-04-25T11:59:45+08:00">2022-04-25</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="Chapter-3-Clang-Driver-参数解析"><a href="#Chapter-3-Clang-Driver-参数解析" class="headerlink" title="Chapter 3 Clang Driver 参数解析"></a>Chapter 3 Clang Driver 参数解析</h2><p>关注点：</p>
-<ul>
-<li>各个类负责的职责</li>
-<li>类之间的流程</li>
-</ul>
-<h4 id="类"><a href="#类" class="headerlink" title="类"></a>类</h4><ul>
-<li><p><code>Info</code>：保存了<code>Option</code>信息的结构体</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Entry for a single option instance in the option data table.</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Info</span> &#123;</span><br><span class="line">    <span class="comment">/// A null terminated array of prefix strings to apply to name while</span></span><br><span class="line">    <span class="comment">/// matching.</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *<span class="type">const</span> *Prefixes;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *Name;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *HelpText;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *MetaVar;</span><br><span class="line">    <span class="type">unsigned</span> ID;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> Kind;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> Param;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> Flags;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">short</span> GroupID;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">short</span> AliasID;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *AliasArgs;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *Values;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p><code>Option</code>： 表示驱动程序接受的选项的一种形式。每一个具体的Arg实例对应一个特定的Option实例<br>见<a target="_blank" rel="noopener" href="https://www.llvm.org/doxygen/Option_8h_source.html#l00051">https://www.llvm.org/doxygen/Option_8h_source.html#l00051</a></p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Option - Abstract representation for a single form of driver</span></span><br><span class="line"><span class="comment">/// argument.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// An Option class represents a form of option that the driver</span></span><br><span class="line"><span class="comment">/// takes, for example how many arguments the option has and how</span></span><br><span class="line"><span class="comment">/// they can be provided. Individual option instances store</span></span><br><span class="line"><span class="comment">/// additional information about what group the option is a member</span></span><br><span class="line"><span class="comment">/// of (if any), if the option is an alias, and a number of</span></span><br><span class="line"><span class="comment">/// flags. At runtime the driver parses the command line into</span></span><br><span class="line"><span class="comment">/// concrete Arg instances, each of which corresponds to a</span></span><br><span class="line"><span class="comment">/// particular Option instance.</span></span><br></pre></td></tr></table></figure>
-</li>
-<li><p><code>Arg</code>：保存具体的option信息。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// A concrete instance of a particular driver option.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// The Arg class encodes just enough information to be able to</span></span><br><span class="line"><span class="comment">/// derive the argument values efficiently.</span></span><br></pre></td></tr></table></figure>
-</li>
-<li><p><code>OptTable</code>：提供了“一层”隔离，在保存足够信息的同时，尽可能lazily-created <code>Option</code></p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Provide access to the Option info table.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// The OptTable class provides a layer of indirection which allows Option</span></span><br><span class="line"><span class="comment">/// instance to be created lazily. In the common case, only a few options will</span></span><br><span class="line"><span class="comment">/// be needed at runtime; the OptTable class maintains enough information to</span></span><br><span class="line"><span class="comment">/// parse command lines without instantiating Options, while letting other</span></span><br><span class="line"><span class="comment">/// parts of the driver still use Option instances where convenient.</span></span><br></pre></td></tr></table></figure>
-</li>
-<li><p><code>InputArgList</code>：保留输入的原始参数和解析后的参数列表，是ArgList的子类</p>
-</li>
-<li><p><code>DriverOptTable</code> 记录driver相关的info信息，是OptTable的子类</p>
-</li>
-</ul>
-<h4 id="详解"><a href="#详解" class="headerlink" title="详解"></a>详解</h4><h5 id="DriverOptTable"><a href="#DriverOptTable" class="headerlink" title="DriverOptTable"></a>DriverOptTable</h5><p>是OptTable的子类。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -640,7 +568,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/24/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B03/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
@@ -654,7 +582,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/" class="post-title-link" itemprop="url">clang 源码导读 笔记(2)</a>
+            <a href="/2022/03/24/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B03/" class="post-title-link" itemprop="url">《clang 源码导读》 笔记(3)</a>
         </h2>
 
         <div class="post-meta">
@@ -663,9 +591,121 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-03-21 18:21:18 / Modified: 20:11:38" itemprop="dateCreated datePublished" datetime="2022-03-21T18:21:18+08:00">2022-03-21</time>
+              <time title="Created: 2022-03-24 17:00:00" itemprop="dateCreated datePublished" datetime="2022-03-24T17:00:00+08:00">2022-03-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-04-25 18:04:21" itemprop="dateModified" datetime="2022-04-25T18:04:21+08:00">2022-04-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/reading-notes/" itemprop="url" rel="index"><span itemprop="name">reading notes</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Chapter-3-Clang-Driver-参数解析"><a href="#Chapter-3-Clang-Driver-参数解析" class="headerlink" title="Chapter 3 Clang Driver 参数解析"></a>Chapter 3 Clang Driver 参数解析</h2><p>关注点：</p>
+<ul>
+<li>各个类负责的职责</li>
+<li>类之间的流程</li>
+</ul>
+<h4 id="类"><a href="#类" class="headerlink" title="类"></a>类</h4><ul>
+<li><p><code>Info</code>：保存了<code>Option</code>信息的结构体</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Entry for a single option instance in the option data table.</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Info</span> &#123;</span><br><span class="line">    <span class="comment">/// A null terminated array of prefix strings to apply to name while</span></span><br><span class="line">    <span class="comment">/// matching.</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *<span class="type">const</span> *Prefixes;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *Name;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *HelpText;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *MetaVar;</span><br><span class="line">    <span class="type">unsigned</span> ID;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> Kind;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> Param;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> Flags;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">short</span> GroupID;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">short</span> AliasID;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *AliasArgs;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *Values;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>Option</code>： 表示驱动程序接受的选项的一种形式。每一个具体的Arg实例对应一个特定的Option实例<br>见<a target="_blank" rel="noopener" href="https://www.llvm.org/doxygen/Option_8h_source.html#l00051">https://www.llvm.org/doxygen/Option_8h_source.html#l00051</a></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Option - Abstract representation for a single form of driver</span></span><br><span class="line"><span class="comment">/// argument.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// An Option class represents a form of option that the driver</span></span><br><span class="line"><span class="comment">/// takes, for example how many arguments the option has and how</span></span><br><span class="line"><span class="comment">/// they can be provided. Individual option instances store</span></span><br><span class="line"><span class="comment">/// additional information about what group the option is a member</span></span><br><span class="line"><span class="comment">/// of (if any), if the option is an alias, and a number of</span></span><br><span class="line"><span class="comment">/// flags. At runtime the driver parses the command line into</span></span><br><span class="line"><span class="comment">/// concrete Arg instances, each of which corresponds to a</span></span><br><span class="line"><span class="comment">/// particular Option instance.</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>Arg</code>：保存具体的option信息。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// A concrete instance of a particular driver option.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// The Arg class encodes just enough information to be able to</span></span><br><span class="line"><span class="comment">/// derive the argument values efficiently.</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>OptTable</code>：提供了“一层”隔离，在保存足够信息的同时，尽可能lazily-created <code>Option</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Provide access to the Option info table.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// The OptTable class provides a layer of indirection which allows Option</span></span><br><span class="line"><span class="comment">/// instance to be created lazily. In the common case, only a few options will</span></span><br><span class="line"><span class="comment">/// be needed at runtime; the OptTable class maintains enough information to</span></span><br><span class="line"><span class="comment">/// parse command lines without instantiating Options, while letting other</span></span><br><span class="line"><span class="comment">/// parts of the driver still use Option instances where convenient.</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>InputArgList</code>：保留输入的原始参数和解析后的参数列表，是ArgList的子类</p>
+</li>
+<li><p><code>DriverOptTable</code> 记录driver相关的info信息，是OptTable的子类</p>
+</li>
+</ul>
+<h4 id="详解"><a href="#详解" class="headerlink" title="详解"></a>详解</h4><h5 id="DriverOptTable"><a href="#DriverOptTable" class="headerlink" title="DriverOptTable"></a>DriverOptTable</h5><p>是OptTable的子类。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/23/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/23/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/" class="post-title-link" itemprop="url">《clang 源码导读》 笔记(2)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-03-23 17:00:00" itemprop="dateCreated datePublished" datetime="2022-03-23T17:00:00+08:00">2022-03-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-04-25 18:04:11" itemprop="dateModified" datetime="2022-04-25T18:04:11+08:00">2022-04-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/reading-notes/" itemprop="url" rel="index"><span itemprop="name">reading notes</span></a>
+                </span>
             </span>
 
           
@@ -760,7 +800,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/22/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
@@ -774,7 +814,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2022/03/21/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/" class="post-title-link" itemprop="url">clang 源码导读 笔记(1)</a>
+            <a href="/2022/03/22/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/" class="post-title-link" itemprop="url">《clang 源码导读》 笔记(1)</a>
         </h2>
 
         <div class="post-meta">
@@ -783,9 +823,24 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-03-21 18:21:18 / Modified: 20:11:27" itemprop="dateCreated datePublished" datetime="2022-03-21T18:21:18+08:00">2022-03-21</time>
+              <time title="Created: 2022-03-22 17:00:00" itemprop="dateCreated datePublished" datetime="2022-03-22T17:00:00+08:00">2022-03-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-04-25 18:04:06" itemprop="dateModified" datetime="2022-04-25T18:04:06+08:00">2022-04-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/reading-notes/" itemprop="url" rel="index"><span itemprop="name">reading notes</span></a>
+                </span>
             </span>
 
           
@@ -799,8 +854,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="《clang-源码导读》-笔记1"><a href="#《clang-源码导读》-笔记1" class="headerlink" title="《clang 源码导读》 笔记1"></a>《clang 源码导读》 笔记1</h1><p>[TOC]</p>
-<h3 id="Chapter-1-基础概念"><a href="#Chapter-1-基础概念" class="headerlink" title="Chapter 1 基础概念"></a>Chapter 1 基础概念</h3><h4 id="关注点"><a href="#关注点" class="headerlink" title="关注点"></a>关注点</h4><ul>
+          <h3 id="Chapter-1-基础概念"><a href="#Chapter-1-基础概念" class="headerlink" title="Chapter 1 基础概念"></a>Chapter 1 基础概念</h3><h4 id="关注点"><a href="#关注点" class="headerlink" title="关注点"></a>关注点</h4><ul>
 <li>各副标题</li>
 </ul>
 <h4 id="“clang”-指的是什么"><a href="#“clang”-指的是什么" class="headerlink" title="“clang” 指的是什么"></a>“clang” 指的是什么</h4><ul>
@@ -841,7 +895,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/Decay&Array-Pointer%20conversion/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/21/[Sigsegv]chkstk_ms()/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
@@ -855,7 +909,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/10/15/Decay&Array-Pointer%20conversion/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/2022/03/21/%5BSigsegv%5Dchkstk_ms()/" class="post-title-link" itemprop="url">Clang Static Analyzer · Checker Developer's Guide [CN] (3)</a>
         </h2>
 
         <div class="post-meta">
@@ -865,15 +919,128 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-10-15 05:54:10" itemprop="dateCreated datePublished" datetime="2021-10-15T05:54:10+08:00">2021-10-15</time>
+              <time title="Created: 2022-03-21 17:00:00" itemprop="dateCreated datePublished" datetime="2022-03-21T17:00:00+08:00">2022-03-21</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-03-21 18:22:06" itemprop="dateModified" datetime="2022-03-21T18:22:06+08:00">2022-03-21</time>
+                <time title="Modified: 2022-04-25 18:02:36" itemprop="dateModified" datetime="2022-04-25T18:02:36+08:00">2022-04-25</time>
               </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CSA/" itemprop="url" rel="index"><span itemprop="name">CSA</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="SigSEGV-bison-chkstk-ms"><a href="#SigSEGV-bison-chkstk-ms" class="headerlink" title="[SigSEGV]bison - chkstk_ms()"></a>[SigSEGV]bison - chkstk_ms()</h1><p>在用bison写parser的时候遇到这个问题，感觉并不是偶然现象，有必要仔细探究一下，判断其对于后续的影响。</p>
+<h3 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h3><p>在语法分析器中，需要暂存当前已移入(shifted)而尚未被规约(not reduced yet)的符号们。举例说明，当解析<code>a+b*c</code>这个表达式，尚未遇到结尾符号<code>c</code>时，会需要暂时保存前面所有的token。因为只有遇到了<code>c</code>，才可以把<code>b*c</code>规约成一个expression，进而和<code>a</code>再规约成更高级的expression。所以在语法分析器设计的时候，为了避免符号栈爆炸，常常会需要仔细考虑表达式和符号的结合性。</p>
+<p>在我个人看来，左右结合是各有利弊的。具体来说：</p>
+<ul>
+<li>左结合，也即形如<code>((a+b)+c)</code>的优点在于，减少语法分析器中暂存的移入栈中的符号的个数。</li>
+<li>右结合，也即形如<code>(a+(b+c))</code>的优点在于，可以在从根节点开始向下访问的时候，首先访问到头结点，并且在每一层都可以实时地知道左节点对右节点的影响。这来自于我的一种直觉：“上文对下文的影响”往往比“下文对上文的影响”多。在一些需要考虑前一个节点是谁来做判断的时候，根据我的经验，这样写更加符合我们的认知习惯。</li>
+</ul>
+<p>我们的parser在var list和statement中都采用了右结合。这在设计之初并没有被我们重视。但在输入规模远超预期的时候，它的影响就体现出来了。</p>
+<h3 id="问题还原"><a href="#问题还原" class="headerlink" title="问题还原"></a>问题还原</h3><p>产生parser的过程并没有任何问题，但在实际parsing的过程中，我们常常会遇到这样的报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cygwin</span></span><br><span class="line">$ ./run xxx.VTL</span><br><span class="line">Segmentation fault(core dumped)</span><br><span class="line"></span><br><span class="line">$ gdb ./run </span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thread 1 <span class="string">&quot;run&quot;</span> received signal SIGSEGV, Segmentation fault.</span><br><span class="line">___chkstk_ms () at /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S:126</span><br><span class="line">126     /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S: No such file or directory.</span><br><span class="line">(gdb) back</span><br><span class="line"><span class="comment">#0  ___chkstk_ms ()</span></span><br><span class="line">    at /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S:126</span><br><span class="line"><span class="comment">#1  0x000000010040108a in VTLparse (</span></span><br><span class="line">    scanner=&lt;error reading variable: Cannot access memory at address 0x10033cd18&gt;, mod=&lt;error reading variable: Cannot access memory at address 0x10033cd10&gt;)</span><br><span class="line">    at parser.tab.c:1112</span><br><span class="line"><span class="comment">#2  0x00000001004099d2 in VTL_parse_module_from_file_to_file (</span></span><br><span class="line">    filename=0xffffcc8c <span class="string">&quot;xxx.VTL&quot;</span>, fp=0x80004a608) at module.c:52</span><br><span class="line"><span class="comment">#3  0x0000000100409a75 in VTL_parse_module_from_file_to_string (</span></span><br><span class="line">    filename=0xffffcc8c <span class="string">&quot;xxx.VTL&quot;</span>) at module.c:64</span><br><span class="line"><span class="comment">#4  0x0000000100409d44 in main (argc=2, argv=0xffffcc40) at main.c:12</span></span><br></pre></td></tr></table></figure>
+
+<p>这个错误并不每次出现，在linux中通常不会出现这个问题，但是在windows下，同样的情况，就有可能会出现这个问题。windows中也并不总是出现这个问题。</p>
+<p>最初遇到这个问题的时候，我用<code>valgrind</code>进行内存检查。发现出现了invalid read &amp; write。经排查，发现是bison中未被纳入语法树的节点并不会被自动回收（例如<code>a+b</code>，加号这个token并不会被我并入二叉树，只是在它们产生的父节点中填一个key叫expr_add）。语法树小的时候这微不足道，大的时候这还是很可观的。于是我手动书写了无效节点的回收，然后<code>valgrind</code>检查中就没有了任何错误。但是问题并没有消除。</p>
+<p>在<code>cygwin</code>中，确乎是出现了疑似内存访问越界的bug（也即这个SIGSEGV）。逐句调试的时候会发现，其出错发生在调用某函数的一瞬间。（甚至无法达到函数中的第一句语句），就好像是函数压栈的时候出了问题。在进行了很多无效的尝试之后，我修改了bison中的栈大小，从<code>8192</code>改成了<code>16384</code>，就解决了问题。由此分析，好像是栈耗尽产生的问题。</p>
+<p>但今天，一个上限设置为<code>163840</code>的parser出现了同样的问题。而我将其改大并没有解决，反倒是改小解决了问题。这就非常让人在意。于是，我去研究了一下这个chkstk_ms()究竟是何方神圣，又是怎么引起了这一次次的错误。</p>
+<h3 id="问题溯源"><a href="#问题溯源" class="headerlink" title="问题溯源"></a>问题溯源</h3><p>在GCC的<a target="_blank" rel="noopener" href="https://github.com/gcc-mirror/gcc/blob/master/libgcc/config/i386/cygwin.S">源码</a>里，<code>__chkstk_ms()</code>的部分是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">// gcc, cygwin.S</span><br><span class="line">___chkstk_ms:</span><br><span class="line">	pushq	%rcx			/* save temps */</span><br><span class="line">	cfi_push(%rcx)</span><br><span class="line">	pushq	%rax</span><br><span class="line">	cfi_push(%rax)</span><br><span class="line">	cmpq	$0x1000, %rax		/* &gt; 4k ?*/</span><br><span class="line">	leaq	24(%rsp), %rcx		/* point past return addr */</span><br><span class="line">	jb	2f</span><br><span class="line"></span><br><span class="line">1:	subq	$0x1000, %rcx  		/* yes, move pointer down 4k */</span><br><span class="line">	orq	$0x0, (%rcx)   		/* probe there */</span><br><span class="line">	subq	$0x1000, %rax  	 	/* decrement count */</span><br><span class="line">	cmpq	$0x1000, %rax</span><br><span class="line">	ja	1b			/* and do it again */</span><br><span class="line"></span><br><span class="line">2:	subq	%rax, %rcx</span><br><span class="line">	orq	$0x0, (%rcx)		/* less than 4k, just peek here */</span><br><span class="line"></span><br><span class="line">	popq	%rax</span><br><span class="line">	cfi_pop(%rax)</span><br><span class="line">	popq	%rcx</span><br><span class="line">	cfi_pop(%rcx)</span><br><span class="line">	ret</span><br><span class="line">	cfi_endproc()</span><br></pre></td></tr></table></figure>
+
+<p>所做的是：接受一个栈大小，以rax传入，然后把它调整到一个4k的倍数，然后以4k为大小向下调整。 </p>
+<p>借此分析，我们所遇到的问题是，将一个栈的大小传给了<code>chkstk_ms()</code>后，后者访问了该栈的内存页，但引发了崩溃。这种崩溃，根据MSDN的说法，是由<code>GUARD PAGE</code>产生的。在window中，有<code>GUARD PAGE</code>的设定：在分配了若干长度的一个数据结构后，会紧跟着在后面设置一个<code>GUARD PAGE</code>，以避免越界。其利用CPU的异常机制，将<code>PAGE_PRESET</code>位标志为0，访问该页的时候，就会触发一个<code>\#PAGE FAULT</code> 异常，操作系统的事先定义好的处理函数就会被调用。</p>
+<p>stackdump信息为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Exception: STATUS_STACK_OVERFLOW at rip=00100409E66^M</span><br><span class="line">rax=0000000000148338 rbx=000000018023E7A0 rcx=00000000FFE03A28^M</span><br><span class="line">rdx=00000000FFFFCA78 rsi=0000000000000000 rdi=0000000000000000^M</span><br><span class="line">r8 =0000000000000000 r9 =0000000000000016 r10=0000000100000000^M</span><br><span class="line">r11=00000001004085A2 r12=00000000FFFFCC80 r13=00000000FFFFCDF0^M</span><br><span class="line">r14=0000000000000000 r15=0000000000000000^M</span><br><span class="line">rbp=00000000FFFFCBC0 rsp=00000000FFFFCA10^M</span><br><span class="line">program=\\wsl$\Centos7\root\vtlparser\vtlparser\run, pid 1329, thread ^M</span><br><span class="line">cs=0033 ds=002B es=002B fs=0053 gs=002B ss=002B^M</span><br><span class="line">Stack trace:^M</span><br><span class="line">Frame        Function    Args^M</span><br><span class="line">000FFFFCBC0  00100409E66 (0010040108A, 001004099D2, 00000000000, 00000000003)^M</span><br><span class="line">000FFFFCBC0  00000340338 (001004099D2, 00000000000, 00000000003, 00000000000)^M</span><br><span class="line">000FFFFCBC0  00800038840 (00000000000, 00000000003, 00000000000, 0018015CC05)^M</span><br><span class="line">000FFFFCBC0  0010040108A (00000000003, 00000000000, 0018015CC05, 001802B1E39)^M</span><br><span class="line">000FFFFCBC0  001004099D2 (001800485F2, 00100400000, 00180044AD5, 0010040A5D0)^M</span><br><span class="line">000FFFFCBC0  00100409A75 (00000000000, 00000000000, 001801B885A, 00000000000)^M</span><br><span class="line">000FFFFCBC0  00100409D44 (00000000020, 8080808080808080, 00180049E91, 00180048D30)^M</span><br><span class="line">000FFFFCCE0  00180049EFD (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">000FFFFFFF0  00180047856 (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">000FFFFFFF0  00180047904 (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">End of stack trace</span><br></pre></td></tr></table></figure>
+
+<p>rax为148338，取整为149000，在试图设置一个这个大小的栈时候，访问越界，踩到了guard page上。但这个大小远大于我们设置的大小，这很奇怪。</p>
+<p>而我们去查看bison产生的parser.tab.c，其中是这样写的：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">    <span class="comment">/* The OS might guarantee only one guard page at the bottom of the stack,</span></span><br><span class="line"><span class="comment">       and a page size can be as small as 4096 bytes.  So we cannot safely</span></span><br><span class="line"><span class="comment">       invoke alloca (N) if N exceeds 4096.  Use a slightly smaller number</span></span><br><span class="line"><span class="comment">       to allow for a few compiler-allocated temporary stack slots.  */</span></span><br><span class="line"><span class="meta">#   <span class="keyword">define</span> YYSTACK_ALLOC_MAXIMUM 4032 <span class="comment">/* reasonable circa 2006 */</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/* YYMAXDEPTH -- maximum size the stacks can grow to (effective only</span></span><br><span class="line"><span class="comment">   if the built-in stack extension method is used).</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">   Do not make this value too large; the results are undefined if</span></span><br><span class="line"><span class="comment">   YYSTACK_ALLOC_MAXIMUM &lt; YYSTACK_BYTES (YYMAXDEPTH)</span></span><br><span class="line"><span class="comment">   evaluated with infinite-precision integer arithmetic.  */</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> YYMAXDEPTH</span></span><br><span class="line"><span class="meta"># <span class="keyword">define</span> YYMAXDEPTH 10000</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">       </span><br><span class="line">       </span><br></pre></td></tr></table></figure>
+
+<p>原因就清晰了。</p>
+<p>简而言之，bison的作者认为，操作系统并不一定会在每个页后面（显然，由于虚拟内存的存在，页不一定是连续的）都创造一个guard page，而这会有些危险。所以它设置了，最大的页大小：4032个字节。（这小于linux中普通页的大小4096B，因而在作者看来是安全的）。而当我们把bison的栈的大小开得大于它的时候（也即大于32256），其将可能由于内置的一些运算产生不确定结果。</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>综上，栈开得小的时候，可能会由于移进栈爆炸而出错，开得过大的时候，则可能出现不稳定的错误。Bison本身不认为会有人一次性处理超过一整个内存页的token，但不幸的是我们写了一个右结合，而输入的用例里，VAR LIST可能确实会很大。</p>
+<p>由于改动可能会引起下游的一系列修改（关于这一点的具体工作量存疑），暂时姑且把栈开一个较大值，待后续迫不得已的时候再进行修改。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/12/14/Decay&Array-Pointer%20conversion/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/12/14/Decay&Array-Pointer%20conversion/" class="post-title-link" itemprop="url">Decay & Array<->Pointer conversion</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-12-14 17:00:00" itemprop="dateCreated datePublished" datetime="2021-12-14T17:00:00+08:00">2021-12-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-04-25 18:06:09" itemprop="dateModified" datetime="2022-04-25T18:06:09+08:00">2022-04-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/working-notes/" itemprop="url" rel="index"><span itemprop="name">working notes</span></a>
+                </span>
+            </span>
 
           
 
@@ -916,7 +1083,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/Cmake%E5%88%9D%E6%AD%A5/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/11/22/Cmake%E5%88%9D%E6%AD%A5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
@@ -930,7 +1097,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/10/15/Cmake%E5%88%9D%E6%AD%A5/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/2021/11/22/Cmake%E5%88%9D%E6%AD%A5/" class="post-title-link" itemprop="url">Cmake初步</a>
         </h2>
 
         <div class="post-meta">
@@ -940,15 +1107,24 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-10-15 05:54:10" itemprop="dateCreated datePublished" datetime="2021-10-15T05:54:10+08:00">2021-10-15</time>
+              <time title="Created: 2021-11-22 17:00:00" itemprop="dateCreated datePublished" datetime="2021-11-22T17:00:00+08:00">2021-11-22</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-03-21 18:22:06" itemprop="dateModified" datetime="2022-03-21T18:22:06+08:00">2022-03-21</time>
+                <time title="Modified: 2022-04-25 18:04:54" itemprop="dateModified" datetime="2022-04-25T18:04:54+08:00">2022-04-25</time>
               </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/working-notes/" itemprop="url" rel="index"><span itemprop="name">working notes</span></a>
+                </span>
+            </span>
 
           
 
@@ -961,8 +1137,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>Cmake初步</p>
-<p>最初接触cmake的时候是有一点排斥性的，因为对于当时所写的parser项目，我手写的makefile在我看来已经足够好。但在后续源码编译z3求解器的时候深切感受到了cmake的香。</p>
+          <p>最初接触cmake的时候是有一点排斥性的，因为对于当时所写的parser项目，我手写的makefile在我看来已经足够好。但在后续源码编译z3求解器的时候深切感受到了cmake的香。</p>
 <p>为什么用它</p>
 <p>cmake的主要优点，根据wiki的说法，是可以隔离编译产生的输出(compiler outputs)和源(source tree)，从而使得”从源文件产生多个build”和”交叉编译(cross compilation)”成为可能。</p>
 <p><a href="%E5%AF%B9%E4%BA%8E%E5%89%8D%E8%80%85%EF%BC%8C%E5%A6%82%E6%9E%9C%E6%89%80%E6%9C%89%E4%BA%A7%E7%94%9F%E6%96%87%E4%BB%B6%E6%B7%B7%E5%9C%A8%E6%BA%90%E6%96%87%E4%BB%B6%E4%B8%AD%EF%BC%8C%E8%AF%95%E5%9B%BE%E9%80%A0%E5%87%BA%E5%A4%9A%E4%B8%AA%E4%BA%A7%E5%87%BA%E7%9A%84%E6%97%B6%E5%80%99%E8%87%AA%E7%84%B6%E4%BC%9A%E8%A2%AB%E8%A6%86%E7%9B%96%E3%80%82%E5%AF%B9%E4%BA%8E%E5%90%8E%E8%80%85%EF%BC%8C%E4%B8%80%E4%B8%AA%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E7%9A%84%E7%BC%96%E8%AF%91%E5%99%A8%E5%BF%85%E9%A1%BB%E8%A6%81%E8%83%BD%E5%A4%9F%E4%BB%8E%E6%BA%90%E4%BB%A3%E7%A0%81%E7%BC%96%E8%AF%91%E4%BA%A7%E7%94%9F%E5%85%B7%E6%9C%89%E5%85%B6%E5%AE%83%E5%B9%B3%E5%8F%B0%E6%A0%BC%E5%BC%8F%E7%9A%84%E7%9B%AE%E6%A0%87%E3%80%82">^注</a>: 关于交叉编译(corss compiler)，它可以产生与编译器环境不同的平台的可执行代码。它与source-to-source compiler是完全不同的，后者指的是产生目标语言的源代码，而非可执行代码。例如clang就是一个cross-compiler</p>
@@ -1000,149 +1175,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/compile%20KLEE%20from%20source/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
-      <meta itemprop="name" content="Asp">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/10/15/compile%20KLEE%20from%20source/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-10-15 05:54:10" itemprop="dateCreated datePublished" datetime="2021-10-15T05:54:10+08:00">2021-10-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-03-21 18:22:06" itemprop="dateModified" datetime="2022-03-21T18:22:06+08:00">2022-03-21</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="源码编译KLEE"><a href="#源码编译KLEE" class="headerlink" title="源码编译KLEE"></a>源码编译KLEE</h2><h3 id="Part1"><a href="#Part1" class="headerlink" title="Part1"></a>Part1</h3><p>官网教程是基于Ubuntu的，Ubuntu使用的是apt来进行包管理，但Ubuntu和CentOS中的包名字会略有不同。所以最初我复制了一份WSL来尝试源码编译，使用chmod +x改了apt-get的权限，后续就直接依据了官网教程。</p>
-<p>在开始之前，第一步需要完成WSL的备份与复制。</p>
-<p>WSL本身是不允许同时拥有两个同样的发行版的，在有了一个以后，再试图安装另一个会直接启动前一个。开源项目LxRunOffline提供了一个solution，但实际上wsl –export 之后再wsl –import也是一个办法。（虽然，后来我发现了一些更简单的方法。）</p>
-<p>开工！</p>
-<ul>
-<li><p>安装了库依赖，依据KLEE的官网安装了所有需要的库。</p>
-</li>
-<li><p>安装clang&amp;llvm<br>  这里好像已经有了，虽然版本不一样，但是确实，centos没搜到clang-9。就继续用了clang-7。</p>
-</li>
-<li><p>搞solver。使用了Z3。最新版的需要CXX17，而cmake支持CXX17这个属性需要3.8以上，然而CentOS上最高支持到3.6.2。所以用了Z3的4.8.9版本。</p>
-</li>
-<li><p>build libc++  看起来没什么大问题，就是最后出现了一个小error: “touch: cannot touch ‘.&#x2F;libcxx_dir&#x2F;llvm-70&#x2F;.src_checked_out’ : No such file or directory”</p>
-</li>
-<li><p>编译了uclibc和POSIX environment model</p>
-</li>
-<li><p>创建KLEE：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cmake -DENABLE_KLEE_EH_CXX=ON -DENABLE_POSIX_RUNTIME=ON -DENABLE_KLEE_UCLIBC=ON -DKLEE_UCLIBC_PATH=../klee-uclibc -DKLEE_LIBCXXABI_SRC_DIR=../libcxxdir/llvm-70/libcxxabi/ -DENABLE_UNIT_TESTS=OFF -DENABLE_KLEE_LIBCXX=ON -DKLEE_LIBCXX_DIR=../libcxxdir/libc++-install-70/ -DKLEE_LIBCXX_INCLUDE_DIR=../libcxxdir/libc++-install-70/include/c++/v1/ -DENABLE_TCMALLOC=OFF ZLIB_LIBRARY=/root/z3-z3-4.8.9/ -DENABLE-ZLIB=OFF -DENABLE_SYSTEM_TESTS=OFF ..</span><br><span class="line">```</span><br></pre></td></tr></table></figure>
-
-<p>这里遇到了一点坑，明明已经enable了devtoolset-8，但是编译器的版本一直还是3.4.2。</p>
-<p>解决方法……重启。</p>
-<p>然后重新开了devtoolset-8以后，clean了make，就好了.</p>
-</li>
-</ul>
-<h3 id="Part2"><a href="#Part2" class="headerlink" title="Part2"></a>Part2</h3><p>然后开始试图在CentOS上用yum编译，不用这种魔改的apt-get。</p>
-<p>这时候发现，实际上事情并没有那么麻烦。用WSL软件安装的时候只需要自己手动改个名字就可以绕过其判断(是否是同一个发行版)了。</p>
-<p>开始在CentOS7上完整尝试。</p>
-<ul>
-<li><p><code>build-essential</code>: 是Debian系的，在这里我们使用了<code>yum install make automake gcc gcc-c++ kernel-devel</code>。</p>
-</li>
-<li><p><code>curl</code>:同名</p>
-</li>
-<li><p><code>libcap-dev</code>: 在CentOS上，dev一般写成devel。这里，<code>libcap-devel</code>已经有了。</p>
-</li>
-<li><p><code>git</code>: 同名</p>
-</li>
-<li><p><code>cmake</code>： 同名</p>
-</li>
-<li><p><code>libncurses5-dev</code>: 使用<code>yum install ncurses-libs ncurses-devel</code>也都已经有了</p>
-</li>
-<li><p><code>python-minimal</code>：直接装了python</p>
-</li>
-<li><p><code>python-pip</code>:同名</p>
-</li>
-<li><p><code>unzip</code>:同名</p>
-</li>
-<li><p><code>libtcmalloc-minimal4</code>: <code>yum install gperftools gperftools-devel</code> 即可。</p>
-</li>
-<li><p><code>libgoogle-perftools-dev</code>：<code>google-perftools-devel </code></p>
-</li>
-<li><p><code>libsqlite3-dev</code>：对应的名字是<code>libsqlite3x</code>，已经有了。</p>
-</li>
-<li><p><code>doxygen</code>：同名。</p>
-</li>
-<li><p><code>python3</code> : 同名。</p>
-</li>
-<li><p><code>python3-pip</code> : 同名</p>
-</li>
-<li><p><code>lit</code>: 使用<code>llvm-toolset-7.0-python2-lit.noarch</code>尝试</p>
-</li>
-<li><p><code>tabulate</code>: 有python2和python3的版本，暂时装了2的：<code>python2-tabulate.noarch</code></p>
-</li>
-<li><p><code>wllvm</code> :没有这种东西,。</p>
-</li>
-<li><p>为了llvm-config，需要<code> llvm-devel</code></p>
-</li>
-<li><p>以上依赖：</p>
-  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install make automake gcc gcc-c++ kernel-devel git curl libcap-devel git cmake ncurses-libs ncurses-devel python python3-pip unzip gperftools gperftools-devel google-perftools-devel libsqlite3x doxygen python3 python3-pip llvm-devel</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>在我们安装scl之前，用yum是搜不到很多包的。所以我们先装它：<code>yum install centos-release-scl</code>。然后再装后续的一系列：</p>
-  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install llvm-toolset-7.0</span><br><span class="line">yum install llvm-toolset-7.0-llvm-devel</span><br><span class="line">yum install llvm-toolset-7.0-clang-devel</span><br><span class="line">yum install clang</span><br><span class="line">yum install llvm-toolset-7.0-cmake</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>Z3:同前</p>
-</li>
-<li><p>uclibc &amp; posix:<br>这里需要wllvm，这里pip install了这个</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/klee/klee-uclibc.git  </span><br><span class="line"><span class="built_in">cd</span> klee-uclibc  </span><br><span class="line">./configure --make-llvm-lib  </span><br><span class="line">make -j2</span><br><span class="line"><span class="built_in">cd</span> ../</span><br></pre></td></tr></table></figure>
-
-<p>就可以了。其中，wllvm是编译到IR的compiler。</p>
-</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/git/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1157,7 +1189,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/10/15/git/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/2021/10/15/git/" class="post-title-link" itemprop="url"><<Git Pro>> brief</a>
         </h2>
 
         <div class="post-meta">
@@ -1167,15 +1199,24 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-10-15 05:54:10" itemprop="dateCreated datePublished" datetime="2021-10-15T05:54:10+08:00">2021-10-15</time>
+              <time title="Created: 2021-10-15 17:00:00" itemprop="dateCreated datePublished" datetime="2021-10-15T17:00:00+08:00">2021-10-15</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-03-21 18:22:06" itemprop="dateModified" datetime="2022-03-21T18:22:06+08:00">2022-03-21</time>
+                <time title="Modified: 2022-04-25 18:07:24" itemprop="dateModified" datetime="2022-04-25T18:07:24+08:00">2022-04-25</time>
               </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/reading-notes/" itemprop="url" rel="index"><span itemprop="name">reading notes</span></a>
+                </span>
+            </span>
 
           
 
@@ -1386,8 +1427,10 @@
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">1</span>
-        <span class="site-state-item-name">categories</span>
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
       </div>
   </nav>
 </div>
