@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="CH3 基于AST的checker很多简单的checker可以直接通过检查语法树并匹配特征来完成。由于不适用path-sensitive 引擎，这样写的checker很快，而且有不错的TP（True Positive）率，但并不能检查极端情况。 这一章我们会讨论基于AST检查的两种路线：AST visitor 和AST matcher。一般来说这两个有一个就够用了，不过有时候也许你会在同一个che">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Clang Static Analyzer · Checker Developer&#39;s Guide [CN] (3)">
+<meta property="og:url" content="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH3/index.html">
+<meta property="og:site_name" content="Good Good Study">
+<meta property="og:description" content="CH3 基于AST的checker很多简单的checker可以直接通过检查语法树并匹配特征来完成。由于不适用path-sensitive 引擎，这样写的checker很快，而且有不错的TP（True Positive）率，但并不能检查极端情况。 这一章我们会讨论基于AST检查的两种路线：AST visitor 和AST matcher。一般来说这两个有一个就够用了，不过有时候也许你会在同一个che">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-04-25T09:14:43.540Z">
+<meta property="article:modified_time" content="2022-04-25T09:15:05.443Z">
+<meta property="article:author" content="Asp">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Clang Static Analyzer · Checker Developer's Guide [CN] (3) | Good Good Study</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Good Good Study</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Day Day up</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Clang Static Analyzer · Checker Developer's Guide [CN] (3)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-25 17:14:43 / Modified: 17:15:05" itemprop="dateCreated datePublished" datetime="2022-04-25T17:14:43+08:00">2022-04-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CSA/" itemprop="url" rel="index"><span itemprop="name">CSA</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="CH3-基于AST的checker"><a href="#CH3-基于AST的checker" class="headerlink" title="CH3 基于AST的checker"></a>CH3 基于AST的checker</h3><p>很多简单的checker可以直接通过检查语法树并匹配特征来完成。由于不适用path-sensitive 引擎，这样写的checker很快，而且有不错的TP（True Positive）率，但并不能检查极端情况。</p>
+<p>这一章我们会讨论基于AST检查的两种路线：<code>AST visitor</code> 和<code>AST matcher</code>。一般来说这两个有一个就够用了，不过有时候也许你会在同一个checker里同时用这两个。</p>
+<p>需要说明的是，基于AST的checker并不是CSA的强项所在，尽管CSA里确实有那么几个基于AST的checker。如果你只需要AST的信息，更合适的工具也许是<code>clang-tidy</code>。</p>
+<p>不过换个角度说，在path-sensitive引擎中，带着用到基于AST的checker是很正常的。那么更多地了解path-sensitive所订阅的事件背后的语法也是很有必要的。于是，这一章我们会学习如何写只用AST的checker，不过相关的技术其实也可以迁移到path-sensitive checker中去，所以掌握它们其实很有用。</p>
+<h4 id="3-1-非路径敏感checker的回调函数"><a href="#3-1-非路径敏感checker的回调函数" class="headerlink" title="3.1 非路径敏感checker的回调函数"></a>3.1 非路径敏感checker的回调函数</h4><p>正如前面提到过的，如果一个path-sensitive checker都没有，path-sensitive引擎是不会启动的，速度会快很多。同样，因为引擎没有启动，而很多数据结构都不会被建立。因而，能用的回调函数接口并不是很多。能用的里面，比较有用的两个分别是<code>check::EndOfTranslationUnit</code> 和 <code>check::ASTCode Body</code>。</p>
+<h5 id="3-1-1-check-EndOfTranslationUnit"><a href="#3-1-1-check-EndOfTranslationUnit" class="headerlink" title="3.1.1 check::EndOfTranslationUnit"></a>3.1.1 check::EndOfTranslationUnit</h5><p>原型为： <code>void checkEndOfTranslationUnit(const TranslationUnitDecl *TU, AnalysisManager &amp;AM, BugReporter &amp;BR) const</code>;</p>
+<p>在这个回调函数中，程序的整个AST是可以拿到的。</p>
+<p>访问整个AST的入口，也就是整个翻译单元（Translation Unit）的声明，是直接以参数形式传入的。</p>
+<p>这个回调函数的使用场景通常是：要检查的不只是可执行代码，还包括各种声明。</p>
+<h5 id="3-1-2-check-ASTCodeBody"><a href="#3-1-2-check-ASTCodeBody" class="headerlink" title="3.1.2 check::ASTCodeBody"></a>3.1.2 check::ASTCodeBody</h5><p>原型为：<code>void checkASTCodeBody(const Decl* D, AnalysisManager &amp;AM, BugReporter &amp;BR) const;</code></p>
+<p>在这个回调函数中，每次调用将会返回函数的声明。其code body是分析器通常会需要分析的，可以通过<code>D-&gt;getBody()</code>来获得。</p>
+<p>这个回调函数的使用场景通常是：要检查的只是可执行代码。</p>
+<h5 id="3-1-3-check-ASTDecl-lt-T-gt"><a href="#3-1-3-check-ASTDecl-lt-T-gt" class="headerlink" title="3.1.3 check::ASTDecl&lt;T&gt;"></a>3.1.3 check::ASTDecl&lt;T&gt;</h5><p>原型为：<code>void checASTDecl(const T* D, AnalysisManager &amp;AM, BugReporter &amp;BR) const;</code></p>
+<p>这个回调函数被用于检查所有AST上类型为<code>T</code>的声明。例如：寻找所有的<code>VarDecl</code>，或者所有的<code>FieldDecl</code>。这通常是declaration Visitor的一种便捷替代。</p>
+<h4 id="3-2-AST-Visitors"><a href="#3-2-AST-Visitors" class="headerlink" title="3.2 AST Visitors"></a>3.2 AST Visitors</h4><p>AST visitor是访问Clang的语法树的最简单的方法。clang提供了数量极多、语法相近的visitor。有两类有用的visitor：</p>
+<ul>
+<li><code>ConstStmtVisitor</code>，用于检查代码主体。</li>
+<li><code>ConstDeclVisitor</code>，检查代码主体之外的声明，例如全局变量。</li>
+</ul>
+<p>想要实现一个Visitor，你需要继承一个它的类，并实现所需要的针对不同AST节点的回调函数需要注意的是，即使没有实现针对特定类型的节点的回调函数，如果实现了针对其基础类型的回调函数，它也会被访问到。</p>
+<p>例如，即使没有实现<code>CXXOperatorCallExpr</code>，它也会因为以下中的任意一个被实现而被访问：</p>
+<ul>
+<li><code>VisitCallExpr()</code></li>
+<li><code>VisitExpr()</code></li>
+<li><code>VisitStmt()</code></li>
+</ul>
+<h5 id="3-2-1-实现一个简单的statement-visitor"><a href="#3-2-1-实现一个简单的statement-visitor" class="headerlink" title="3.2.1 实现一个简单的statement visitor"></a>3.2.1 实现一个简单的statement visitor</h5><p>从一个简单的例子开始，我们看看我们能不能使用AST visitor来重写一下<code>MainCallChecker</code>。</p>
+<p>第一步，我们来声明AST visitor。visitor保存有用以抛出报告的<code>BugReporter</code>的引用，以及用于提供位置信息的当前的<code>AnalysisDeclContext</code>。后者包裹起了我们在分析的函数。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">namesapce&#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">WalkAST</span>: <span class="keyword">public</span> ConstStmtVisitor&lt;WalkAST&gt;&#123;</span><br><span class="line">        BugReporter &amp;BR;</span><br><span class="line">        AnalysisDeclContext *ADC;</span><br><span class="line">      </span><br><span class="line">        <span class="function">Void <span class="title">VisitChildren</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="built_in">WalkAST</span>(BugReporter &amp;Reporter, AnalysisDeclContext *Context): <span class="built_in">BR</span>(Reporter), <span class="built_in">ADC</span>(Context) &#123;&#125;</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">VisitStmt</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>;</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">VisitCallExpr</span><span class="params">(<span class="type">const</span> CallExpr *CE)</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个visitor定义了两个public的回调函数：<code>VisitCallExpr(...)</code>用于处理函数调用表达式，以及<code>VisitStmt(...)</code>用于处理其它的statement。</p>
+<p>这些回调函数有一个共同点：他们在结束访问自身的statement之后，需要访问子statement。这种操作我们切分到<code>VisitChildren(...)</code>中：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">WalkAST::VisitChildren</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (Stmt::const_child_iterator I = S-&gt;<span class="built_in">child_begin</span>(), E=<span class="built_in">child_end</span>(); I!=E; ++I)</span><br><span class="line">        <span class="keyword">if</span>(<span class="type">const</span> Stmt *Child = *I)</span><br><span class="line">            <span class="built_in">Visit</span>(Child);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p> 于是，<code>VisitStmt</code>除了<code>VisitChildren</code>以外不需要做别的了：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">WalkAST::VisitStmt</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>&#123;</span><br><span class="line">    <span class="built_in">VisitChildren</span>(S);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>大多数checker的逻辑被存在<code>VisitCallExpr(...)</code>中。我们获取当前所调用的函数的标识符，看看它是否恰巧是”main”。如果是，那么我们就抛出一个path-sensitive的report。注意，由于没有可用的<code>CheckerContext</code>包裹，所以需要直接访问<code>BugReporter</code>；而且获取位置信息也有点麻烦。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> WalkAST ::<span class="built_in">VisitCallExpr</span>(<span class="type">const</span> CallExpr *CE) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="type">const</span> FunctionDecl *FD = CE-&gt;<span class="built_in">getDirectCallee</span>())</span><br><span class="line">        <span class="keyword">if</span> (<span class="type">const</span> IdentifierInfo *II = FD-&gt;<span class="built_in">getIdentifier</span>())</span><br><span class="line">            <span class="keyword">if</span> (II-&gt;<span class="built_in">isStr</span>(<span class="string">&quot;main&quot;</span>)) &#123;</span><br><span class="line">                SourceRange R = CE-&gt;<span class="built_in">getSourceRange</span>();</span><br><span class="line">                PathDiagnosticLocation ELoc = PathDiagnosticLocation ::<span class="built_in">createBegin</span>(</span><br><span class="line">                    CE, BR.<span class="built_in">getSourceManager</span>(), ADC);</span><br><span class="line">                BR.<span class="built_in">EmitBasicReport</span>(ADC-&gt;<span class="built_in">getDecl</span>(), <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>,</span><br><span class="line">                                   <span class="string">&quot;Call to main&quot;</span>, ELoc, R);</span><br><span class="line">            &#125;</span><br><span class="line">    <span class="built_in">VisitChildren</span>(CE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上就是visitor的实现。现在我们就只需要创建一个，然后给它一些代码来访问。既然“所有代码”是一个declaration而不是一个statement，我们选择订阅<code>check::ASTCodeBody</code>：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">MainCallCheckerAST</span> : <span class="keyword">public</span> Checker&lt;check::ASTCodeBody&gt; &#123;</span><br><span class="line">        <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">checkASTCodeBody</span><span class="params">(<span class="type">const</span> Decl *D, AnalysisManager &amp;AM,</span></span></span><br><span class="line"><span class="params"><span class="function">                              BugReporter &amp;B)</span> <span class="type">const</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125; <span class="comment">// namespace</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> MainCallCheckerAST ::<span class="built_in">checkASTCodeBody</span>(<span class="type">const</span> Decl *D, AnalysisManager &amp;AM,BugReporter &amp;BR) <span class="type">const</span> &#123;</span><br><span class="line">    <span class="function">WalkAST <span class="title">Walker</span><span class="params">(BR, AM.getAnalysisDeclContext(D))</span></span>;</span><br><span class="line">    Walker.<span class="built_in">Visit</span>(D-&gt;<span class="built_in">getBody</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>于是，这个visitor从包含了函数体的compound statement开始，下降到其中的子statement。</p>
+<p>到此为止checker就准备好了。但是对前面的例子它并不会报错，因为我们只检查直接函数调用，而不检查通过函数指针的调用。所以我们写一个新的例子：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">main</span>(<span class="number">0</span>,<span class="number">0</span>); <span class="comment">// call to main</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-2-2-合并statement-和declaration-的visitor"><a href="#3-2-2-合并statement-和declaration-的visitor" class="headerlink" title="3.2.2 合并statement 和declaration 的visitor"></a>3.2.2 合并statement 和declaration 的visitor</h5><p>如果需要在内部和并这两种visitor以同时访问statement和declaration，就同时继承这两个：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">WalkAST</span> : <span class="keyword">public</span> ConstStmtVisitor&lt;WalkAST&gt;,</span><br><span class="line"><span class="keyword">public</span> ConstDeclVisitor&lt;WalkAST&gt; &#123;</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">using</span> ConstStmtVisitor&lt;WalkAST&gt;::Visit;</span><br><span class="line">    <span class="keyword">using</span> ConstDeclVisitor&lt;WalkAST&gt;::Visit;</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="3-3-AST-matcher"><a href="#3-3-AST-matcher" class="headerlink" title="3.3 AST matcher"></a>3.3 AST matcher</h4><p>AST matcher 是在AST上寻找简单代码模式的新接口。它允许对代码的模式特征编写极其简洁的声明式定义，几乎和用自然语言的文字描述它们一样短。并提供了一个对应操作的接口。 AST matcher更适合于简单的代码模式特征，因为其简单性和代码可读性，所以它并不像AST访问者那样无所不能。  </p>
+<h5 id="3-3-1-实现一个简单的AST-matcher"><a href="#3-3-1-实现一个简单的AST-matcher" class="headerlink" title="3.3.1 实现一个简单的AST matcher"></a>3.3.1 实现一个简单的AST matcher</h5><p>我们看看我们如何用AST matcher来改写<code>MainCallChecker</code>：</p>
+<p>首先写一个matcher：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">callExpr</span>(<span class="built_in">callee</span>(<span class="built_in">functionDecl</span>(<span class="built_in">hasName</span>(<span class="string">&quot;main&quot;</span>)))). <span class="built_in">bind</span>(<span class="string">&quot;call&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>完整的检查器逻辑现在只需要写一行代码！剩下的就是编写检查程序并抛出错误报告。留神<code>bind(…)</code>命令是如何为应用它的AST节点分配名称的，以便将来参考。  </p>
+<p>我们需要做的第一件事是定义匹配器回调。 每当checker找到一些东西时，就会触发这个回调。 这个回调需要继承<code>MatchFinder::MatchCallback</code>并实现名为<code>run(…)</code>的方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Callback</span> : <span class="keyword">public</span> MatchFinder ::MatchCallback &#123;</span><br><span class="line">        BugReporter &amp;BR;</span><br><span class="line">        AnalysisDeclContext *ADC;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">run</span><span class="params">(<span class="type">const</span> MatchFinder ::MatchResult &amp;Result)</span></span>;</span><br><span class="line">        <span class="built_in">Callback</span>(BugReporter &amp;Reporter, AnalysisDeclContext *Context)</span><br><span class="line">            : <span class="built_in">BR</span>(Reporter), <span class="built_in">ADC</span>(Context) &#123;&#125;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125; <span class="comment">// namespace</span></span><br></pre></td></tr></table></figure>
+
+<p>理想情况下，唯一需要做的就是抛出一个错误报告。不过matcher并不能永远写清楚逻辑细节，所以留一些检查工作在回调函数中也是很正常的事。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">Callback::run</span><span class="params">(<span class="type">const</span> MatchFinder ::MatchResult &amp;Result)</span> </span>&#123;</span><br><span class="line">    <span class="type">const</span> CallExpr *CE = Result.Nodes.<span class="built_in">getStmtAs</span>&lt;CallExpr&gt;(<span class="string">&quot;call&quot;</span>);</span><br><span class="line">    <span class="built_in">assert</span>(CE);</span><br><span class="line">    SourceRange R = CE-&gt;<span class="built_in">getSourceRange</span>();</span><br><span class="line">    PathDiagnosticLocation ELoc =</span><br><span class="line">        PathDiagnosticLocation ::<span class="built_in">createBegin</span>(CE, BR.<span class="built_in">getSourceManager</span>(), ADC);</span><br><span class="line">    BR.<span class="built_in">EmitBasicReport</span>(ADC-&gt;<span class="built_in">getDecl</span>(), <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>,</span><br><span class="line">                       <span class="string">&quot;Call to main&quot;</span>, ELoc, R);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在毁掉函数中，我们拿到了call expression的名字“call”（正是我们在checker）中通过<code>bind()</code>定义的。在matcher中，我们确信这些调用表达式是存在的，所以我们可以进行断言。</p>
+<p>然后该去定义checker了。这次我们试试整TU的匹配：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">MainCallCheckerMatchers</span> : <span class="keyword">public</span> Checker&lt;check ::EndOfTranslationUnit&gt; &#123;</span><br><span class="line">        <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">checkEndOfTranslationUnit</span><span class="params">(<span class="type">const</span> TranslationUnitDecl *TU, AnalysisManager &amp;AM, BugReporter &amp;B)</span> <span class="type">const</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125; <span class="comment">// namespace</span></span><br></pre></td></tr></table></figure>
+
+<p>最后，在回调checker中，我们需要构建matcher：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">MainCallCheckerMatchers::checkEndOfTranslationUnit</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="type">const</span> TranslationUnitDecl *TU, AnalysisManager &amp;AM, BugReporter &amp;B)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    MatchFinder F;</span><br><span class="line">    <span class="function">Callback <span class="title">CB</span><span class="params">(B, AM.getAnalysisDeclContext(TU))</span></span>;</span><br><span class="line">    F.<span class="built_in">addMatcher</span>(</span><br><span class="line">        <span class="built_in">stmt</span>(<span class="built_in">hasDescendant</span>(</span><br><span class="line">            <span class="built_in">callExpr</span>(<span class="built_in">callee</span>(<span class="built_in">functionDecl</span>(<span class="built_in">hasName</span>(<span class="string">&quot;main&quot;</span>)))).<span class="built_in">bind</span>(<span class="string">&quot;call&quot;</span>))),</span><br><span class="line">        &amp;CB);</span><br><span class="line">    F.<span class="built_in">matchAST</span>(AM.<span class="built_in">getASTContext</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>matchAST(...)</code>方法会match整个TU的AST。至此为止，整个checker就写好了。</p>
+<p>从<code>AnalysisManager</code>中获得的<code>ASTContext</code>，包含了整个程序的AST，以及关于AST的各种元信息，例如编译期间强加的特定于实现的特征（implementation-specific traits）。</p>
+<h5 id="3-3-2-复用matcher"><a href="#3-3-2-复用matcher" class="headerlink" title="3.3.2 复用matcher"></a>3.3.2 复用matcher</h5><p>如果一个子特征在matcher中被重复使用，可以保存并复用。例如，下面的例子中，TypeM就是这样：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">TypeMatcher TypeM = <span class="built_in">templateSpecializationType</span>(). <span class="built_in">bind</span>(<span class="string">&quot;type&quot;</span>);</span><br><span class="line">DeclarationMatcher VarDeclM = <span class="built_in">varDecl</span>(<span class="built_in">hasType</span>(TypeM)). <span class="built_in">bind</span>(<span class="string">&quot;decl&quot;</span>);</span><br><span class="line">StatementMatcher TempObjM = <span class="built_in">temporaryObjectExpr</span>(<span class="built_in">hasType</span>(TypeM )).<span class="built_in">bind</span>(<span class="string">&quot;stmt&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="3-3-3-定义定制化matcher"><a href="#3-3-3-定义定制化matcher" class="headerlink" title="3.3.3 定义定制化matcher"></a>3.3.3 定义定制化matcher</h5><p>有时，单纯组合起预定义的checker不足以实现所需的检查。在这种情况下，可以实现一个自定义AST匹配器。这只需要几行代码，很多例子可以在<code>ASTMatchers.h</code>中找到。 在checker中实现自定义的AST matcher时，需要将其放入<code>clang::ast_matchers</code>命名空间。 下面的例子定义了一个自定义声明匹配器，它匹配声明为Union而不是Struct的<code>RecordDecl</code>节点:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> clang&#123;</span><br><span class="line">    <span class="keyword">namespace</span> ast_matchers&#123;</span><br><span class="line">        <span class="built_in">AST_MATCHER</span>(RecordDecl, isUnion)&#123;</span><br><span class="line">            <span class="keyword">return</span> Node.<span class="built_in">isUnion</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-3-4-匹配特定的statement"><a href="#3-3-4-匹配特定的statement" class="headerlink" title="3.3.4 匹配特定的statement"></a>3.3.4 匹配特定的statement</h5><p>正如之前所提到的，<code>matchAST(...)</code>匹配整个TU的AST。不过有时候只想要AST的特定一部分，那么可以试试<code>match(...)</code>方法。</p>
+<p>举例来说，我们试试用<code>check::ASTCodeBody</code>来实现<code>MainCallChecker</code>。不过，<code>match(...)</code>会匹配statement本身，而<code>matchAST(...)</code>会匹配自身和子statement，所以我们要修改我们的matcher：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">MainCallCheckerMatchers::checkASTCodeBody</span><span class="params">(<span class="type">const</span> Decl *D,AnalysisManager &amp;AM,BugReporter &amp;BR)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    MatchFinder F;</span><br><span class="line">    <span class="function">Callback <span class="title">CB</span><span class="params">(BR, AM.getAnalysisDeclContext(D))</span></span>;</span><br><span class="line">    F.<span class="built_in">addMatcher</span>(<span class="built_in">stmt</span>(<span class="built_in">hasDescendant</span>(<span class="built_in">callExpr</span>(<span class="built_in">callee</span>(<span class="built_in">functionDecl</span>(<span class="built_in">hasName</span>(<span class="string">&quot;main&quot;</span>)))).<span class="built_in">bind</span>(<span class="string">&quot;call&quot;</span>))),&amp;CB);</span><br><span class="line">    F.<span class="built_in">match</span>(*(D-&gt;<span class="built_in">getBody</span>()), AM.<span class="built_in">getASTContext</span>()); <span class="comment">// wrong in original text</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-4-常量折叠"><a href="#3-4-常量折叠" class="headerlink" title="3.4 常量折叠"></a>3.4 常量折叠</h4><p>从表达式的AST中并不容易看出它实际上代表一个常量值。一个表达式可能包含对常量变量的类型转换和引用，将其折叠为实际值是不那么容易的。 Clang中有一个现成的解决方案：只需使用Expr的<code>EvaluateAsInt(…)</code>方法:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> Expr *E =<span class="comment">/* some AST expression you are interested in */</span> </span><br><span class="line">    llvm::APSInt Result;</span><br><span class="line"><span class="keyword">if</span> (E-&gt;<span class="built_in">EvaluateAsInt</span>(Result, ACtx,Expr::SE_AllowSideEffects)) &#123; </span><br><span class="line">    <span class="comment">/* we managed to obtain the value of the expression */</span></span><br><span class="line">    <span class="type">uint64_t</span> IntResult = Result.<span class="built_in">getLimitedValue</span>();   <span class="comment">/* ... */</span></span><br><span class="line">&#125; <span class="keyword">else</span> &#123; </span><br><span class="line">    <span class="comment">/* the expression doesn ’t fold to into a constant value */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-5-延伸阅读"><a href="#3-5-延伸阅读" class="headerlink" title="3.5 延伸阅读"></a>3.5 延伸阅读</h4><p><a target="_blank" rel="noopener" href="http://llvm.org/devmtg/2013-04/videos/klimek-vhres.mov">http://llvm.org/devmtg/2013-04/videos/klimek-vhres.mov</a> </p>
+<p><a target="_blank" rel="noopener" href="http://clang.llvm.org/docs/LibASTMatchersReference.html">http://clang.llvm.org/docs/LibASTMatchersReference.html</a> </p>
+<p><a target="_blank" rel="noopener" href="http://clang.llvm.org/doxygen/classclang_1_1Stmt.html">http://clang.llvm.org/doxygen/classclang_1_1Stmt.html</a> </p>
+<p><a target="_blank" rel="noopener" href="http://clang.llvm.org/doxygen/classclang_1_1Decl.html">http://clang.llvm.org/doxygen/classclang_1_1Decl.html</a></p>
+<p><a target="_blank" rel="noopener" href="http://clang.llvm.org/doxygen/classclang_1_1Type.html">http://clang.llvm.org/doxygen/classclang_1_1Type.html</a></p>
+<h4 id=""><a href="#" class="headerlink" title=""></a></h4>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/25/CSA%20Guide%20CN%20CH2/" rel="prev" title="Clang Static Analyzer · Checker Developer's Guide [CN] (2)">
+      <i class="fa fa-chevron-left"></i> Clang Static Analyzer · Checker Developer's Guide [CN] (2)
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#CH3-%E5%9F%BA%E4%BA%8EAST%E7%9A%84checker"><span class="nav-number">1.</span> <span class="nav-text">CH3 基于AST的checker</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-%E9%9D%9E%E8%B7%AF%E5%BE%84%E6%95%8F%E6%84%9Fchecker%E7%9A%84%E5%9B%9E%E8%B0%83%E5%87%BD%E6%95%B0"><span class="nav-number">1.1.</span> <span class="nav-text">3.1 非路径敏感checker的回调函数</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-1-check-EndOfTranslationUnit"><span class="nav-number">1.1.1.</span> <span class="nav-text">3.1.1 check::EndOfTranslationUnit</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-2-check-ASTCodeBody"><span class="nav-number">1.1.2.</span> <span class="nav-text">3.1.2 check::ASTCodeBody</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-3-check-ASTDecl-lt-T-gt"><span class="nav-number">1.1.3.</span> <span class="nav-text">3.1.3 check::ASTDecl&lt;T&gt;</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-AST-Visitors"><span class="nav-number">1.2.</span> <span class="nav-text">3.2 AST Visitors</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-1-%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84statement-visitor"><span class="nav-number">1.2.1.</span> <span class="nav-text">3.2.1 实现一个简单的statement visitor</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-2-%E5%90%88%E5%B9%B6statement-%E5%92%8Cdeclaration-%E7%9A%84visitor"><span class="nav-number">1.2.2.</span> <span class="nav-text">3.2.2 合并statement 和declaration 的visitor</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-AST-matcher"><span class="nav-number">1.3.</span> <span class="nav-text">3.3 AST matcher</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-1-%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84AST-matcher"><span class="nav-number">1.3.1.</span> <span class="nav-text">3.3.1 实现一个简单的AST matcher</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-2-%E5%A4%8D%E7%94%A8matcher"><span class="nav-number">1.3.2.</span> <span class="nav-text">3.3.2 复用matcher</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-3-%E5%AE%9A%E4%B9%89%E5%AE%9A%E5%88%B6%E5%8C%96matcher"><span class="nav-number">1.3.3.</span> <span class="nav-text">3.3.3 定义定制化matcher</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-4-%E5%8C%B9%E9%85%8D%E7%89%B9%E5%AE%9A%E7%9A%84statement"><span class="nav-number">1.3.4.</span> <span class="nav-text">3.3.4 匹配特定的statement</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-4-%E5%B8%B8%E9%87%8F%E6%8A%98%E5%8F%A0"><span class="nav-number">1.4.</span> <span class="nav-text">3.4 常量折叠</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">1.5.</span> <span class="nav-text">3.5 延伸阅读</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-number">1.6.</span> <span class="nav-text"></span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Asp"
+      src="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+  <p class="site-author-name" itemprop="name">Asp</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Asp</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

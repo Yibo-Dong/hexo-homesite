@@ -151,6 +151,281 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/04/25/CSA%20Guide%20CN%20CH3/" class="post-title-link" itemprop="url">Clang Static Analyzer · Checker Developer's Guide [CN] (3)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-25 17:14:43 / Modified: 17:15:05" itemprop="dateCreated datePublished" datetime="2022-04-25T17:14:43+08:00">2022-04-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CSA/" itemprop="url" rel="index"><span itemprop="name">CSA</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="CH3-基于AST的checker"><a href="#CH3-基于AST的checker" class="headerlink" title="CH3 基于AST的checker"></a>CH3 基于AST的checker</h3><p>很多简单的checker可以直接通过检查语法树并匹配特征来完成。由于不适用path-sensitive 引擎，这样写的checker很快，而且有不错的TP（True Positive）率，但并不能检查极端情况。</p>
+<p>这一章我们会讨论基于AST检查的两种路线：<code>AST visitor</code> 和<code>AST matcher</code>。一般来说这两个有一个就够用了，不过有时候也许你会在同一个checker里同时用这两个。</p>
+<p>需要说明的是，基于AST的checker并不是CSA的强项所在，尽管CSA里确实有那么几个基于AST的checker。如果你只需要AST的信息，更合适的工具也许是<code>clang-tidy</code>。</p>
+<p>不过换个角度说，在path-sensitive引擎中，带着用到基于AST的checker是很正常的。那么更多地了解path-sensitive所订阅的事件背后的语法也是很有必要的。于是，这一章我们会学习如何写只用AST的checker，不过相关的技术其实也可以迁移到path-sensitive checker中去，所以掌握它们其实很有用。</p>
+<h4 id="3-1-非路径敏感checker的回调函数"><a href="#3-1-非路径敏感checker的回调函数" class="headerlink" title="3.1 非路径敏感checker的回调函数"></a>3.1 非路径敏感checker的回调函数</h4><p>正如前面提到过的，如果一个path-sensitive checker都没有，path-sensitive引擎是不会启动的，速度会快很多。同样，因为引擎没有启动，而很多数据结构都不会被建立。因而，能用的回调函数接口并不是很多。能用的里面，比较有用的两个分别是<code>check::EndOfTranslationUnit</code> 和 <code>check::ASTCode Body</code>。</p>
+<h5 id="3-1-1-check-EndOfTranslationUnit"><a href="#3-1-1-check-EndOfTranslationUnit" class="headerlink" title="3.1.1 check::EndOfTranslationUnit"></a>3.1.1 check::EndOfTranslationUnit</h5><p>原型为： <code>void checkEndOfTranslationUnit(const TranslationUnitDecl *TU, AnalysisManager &amp;AM, BugReporter &amp;BR) const</code>;</p>
+<p>在这个回调函数中，程序的整个AST是可以拿到的。</p>
+<p>访问整个AST的入口，也就是整个翻译单元（Translation Unit）的声明，是直接以参数形式传入的。</p>
+<p>这个回调函数的使用场景通常是：要检查的不只是可执行代码，还包括各种声明。</p>
+<h5 id="3-1-2-check-ASTCodeBody"><a href="#3-1-2-check-ASTCodeBody" class="headerlink" title="3.1.2 check::ASTCodeBody"></a>3.1.2 check::ASTCodeBody</h5><p>原型为：<code>void checkASTCodeBody(const Decl* D, AnalysisManager &amp;AM, BugReporter &amp;BR) const;</code></p>
+<p>在这个回调函数中，每次调用将会返回函数的声明。其code body是分析器通常会需要分析的，可以通过<code>D-&gt;getBody()</code>来获得。</p>
+<p>这个回调函数的使用场景通常是：要检查的只是可执行代码。</p>
+<h5 id="3-1-3-check-ASTDecl-lt-T-gt"><a href="#3-1-3-check-ASTDecl-lt-T-gt" class="headerlink" title="3.1.3 check::ASTDecl&lt;T&gt;"></a>3.1.3 check::ASTDecl&lt;T&gt;</h5><p>原型为：<code>void checASTDecl(const T* D, AnalysisManager &amp;AM, BugReporter &amp;BR) const;</code></p>
+<p>这个回调函数被用于检查所有AST上类型为<code>T</code>的声明。例如：寻找所有的<code>VarDecl</code>，或者所有的<code>FieldDecl</code>。这通常是declaration Visitor的一种便捷替代。</p>
+<h4 id="3-2-AST-Visitors"><a href="#3-2-AST-Visitors" class="headerlink" title="3.2 AST Visitors"></a>3.2 AST Visitors</h4><p>AST visitor是访问Clang的语法树的最简单的方法。clang提供了数量极多、语法相近的visitor。有两类有用的visitor：</p>
+<ul>
+<li><code>ConstStmtVisitor</code>，用于检查代码主体。</li>
+<li><code>ConstDeclVisitor</code>，检查代码主体之外的声明，例如全局变量。</li>
+</ul>
+<p>想要实现一个Visitor，你需要继承一个它的类，并实现所需要的针对不同AST节点的回调函数需要注意的是，即使没有实现针对特定类型的节点的回调函数，如果实现了针对其基础类型的回调函数，它也会被访问到。</p>
+<p>例如，即使没有实现<code>CXXOperatorCallExpr</code>，它也会因为以下中的任意一个被实现而被访问：</p>
+<ul>
+<li><code>VisitCallExpr()</code></li>
+<li><code>VisitExpr()</code></li>
+<li><code>VisitStmt()</code></li>
+</ul>
+<h5 id="3-2-1-实现一个简单的statement-visitor"><a href="#3-2-1-实现一个简单的statement-visitor" class="headerlink" title="3.2.1 实现一个简单的statement visitor"></a>3.2.1 实现一个简单的statement visitor</h5><p>从一个简单的例子开始，我们看看我们能不能使用AST visitor来重写一下<code>MainCallChecker</code>。</p>
+<p>第一步，我们来声明AST visitor。visitor保存有用以抛出报告的<code>BugReporter</code>的引用，以及用于提供位置信息的当前的<code>AnalysisDeclContext</code>。后者包裹起了我们在分析的函数。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">namesapce&#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">WalkAST</span>: <span class="keyword">public</span> ConstStmtVisitor&lt;WalkAST&gt;&#123;</span><br><span class="line">        BugReporter &amp;BR;</span><br><span class="line">        AnalysisDeclContext *ADC;</span><br><span class="line">      </span><br><span class="line">        <span class="function">Void <span class="title">VisitChildren</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="built_in">WalkAST</span>(BugReporter &amp;Reporter, AnalysisDeclContext *Context): <span class="built_in">BR</span>(Reporter), <span class="built_in">ADC</span>(Context) &#123;&#125;</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">VisitStmt</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>;</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">VisitCallExpr</span><span class="params">(<span class="type">const</span> CallExpr *CE)</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个visitor定义了两个public的回调函数：<code>VisitCallExpr(...)</code>用于处理函数调用表达式，以及<code>VisitStmt(...)</code>用于处理其它的statement。</p>
+<p>这些回调函数有一个共同点：他们在结束访问自身的statement之后，需要访问子statement。这种操作我们切分到<code>VisitChildren(...)</code>中：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">WalkAST::VisitChildren</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (Stmt::const_child_iterator I = S-&gt;<span class="built_in">child_begin</span>(), E=<span class="built_in">child_end</span>(); I!=E; ++I)</span><br><span class="line">        <span class="keyword">if</span>(<span class="type">const</span> Stmt *Child = *I)</span><br><span class="line">            <span class="built_in">Visit</span>(Child);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p> 于是，<code>VisitStmt</code>除了<code>VisitChildren</code>以外不需要做别的了：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">WalkAST::VisitStmt</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>&#123;</span><br><span class="line">    <span class="built_in">VisitChildren</span>(S);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>大多数checker的逻辑被存在<code>VisitCallExpr(...)</code>中。我们获取当前所调用的函数的标识符，看看它是否恰巧是”main”。如果是，那么我们就抛出一个path-sensitive的report。注意，由于没有可用的<code>CheckerContext</code>包裹，所以需要直接访问<code>BugReporter</code>；而且获取位置信息也有点麻烦。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> WalkAST ::<span class="built_in">VisitCallExpr</span>(<span class="type">const</span> CallExpr *CE) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="type">const</span> FunctionDecl *FD = CE-&gt;<span class="built_in">getDirectCallee</span>())</span><br><span class="line">        <span class="keyword">if</span> (<span class="type">const</span> IdentifierInfo *II = FD-&gt;<span class="built_in">getIdentifier</span>())</span><br><span class="line">            <span class="keyword">if</span> (II-&gt;<span class="built_in">isStr</span>(<span class="string">&quot;main&quot;</span>)) &#123;</span><br><span class="line">                SourceRange R = CE-&gt;<span class="built_in">getSourceRange</span>();</span><br><span class="line">                PathDiagnosticLocation ELoc = PathDiagnosticLocation ::<span class="built_in">createBegin</span>(</span><br><span class="line">                    CE, BR.<span class="built_in">getSourceManager</span>(), ADC);</span><br><span class="line">                BR.<span class="built_in">EmitBasicReport</span>(ADC-&gt;<span class="built_in">getDecl</span>(), <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>,</span><br><span class="line">                                   <span class="string">&quot;Call to main&quot;</span>, ELoc, R);</span><br><span class="line">            &#125;</span><br><span class="line">    <span class="built_in">VisitChildren</span>(CE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上就是visitor的实现。现在我们就只需要创建一个，然后给它一些代码来访问。既然“所有代码”是一个declaration而不是一个statement，我们选择订阅<code>check::ASTCodeBody</code>：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">MainCallCheckerAST</span> : <span class="keyword">public</span> Checker&lt;check::ASTCodeBody&gt; &#123;</span><br><span class="line">        <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">checkASTCodeBody</span><span class="params">(<span class="type">const</span> Decl *D, AnalysisManager &amp;AM,</span></span></span><br><span class="line"><span class="params"><span class="function">                              BugReporter &amp;B)</span> <span class="type">const</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125; <span class="comment">// namespace</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> MainCallCheckerAST ::<span class="built_in">checkASTCodeBody</span>(<span class="type">const</span> Decl *D, AnalysisManager &amp;AM,BugReporter &amp;BR) <span class="type">const</span> &#123;</span><br><span class="line">    <span class="function">WalkAST <span class="title">Walker</span><span class="params">(BR, AM.getAnalysisDeclContext(D))</span></span>;</span><br><span class="line">    Walker.<span class="built_in">Visit</span>(D-&gt;<span class="built_in">getBody</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>于是，这个visitor从包含了函数体的compound statement开始，下降到其中的子statement。</p>
+<p>到此为止checker就准备好了。但是对前面的例子它并不会报错，因为我们只检查直接函数调用，而不检查通过函数指针的调用。所以我们写一个新的例子：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">main</span>(<span class="number">0</span>,<span class="number">0</span>); <span class="comment">// call to main</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-2-2-合并statement-和declaration-的visitor"><a href="#3-2-2-合并statement-和declaration-的visitor" class="headerlink" title="3.2.2 合并statement 和declaration 的visitor"></a>3.2.2 合并statement 和declaration 的visitor</h5><p>如果需要在内部和并这两种visitor以同时访问statement和declaration，就同时继承这两个：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">WalkAST</span> : <span class="keyword">public</span> ConstStmtVisitor&lt;WalkAST&gt;,</span><br><span class="line"><span class="keyword">public</span> ConstDeclVisitor&lt;WalkAST&gt; &#123;</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">using</span> ConstStmtVisitor&lt;WalkAST&gt;::Visit;</span><br><span class="line">    <span class="keyword">using</span> ConstDeclVisitor&lt;WalkAST&gt;::Visit;</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="3-3-AST-matcher"><a href="#3-3-AST-matcher" class="headerlink" title="3.3 AST matcher"></a>3.3 AST matcher</h4><p>AST matcher 是在AST上寻找简单代码模式的新接口。它允许对代码的模式特征编写极其简洁的声明式定义，几乎和用自然语言的文字描述它们一样短。并提供了一个对应操作的接口。 AST matcher更适合于简单的代码模式特征，因为其简单性和代码可读性，所以它并不像AST访问者那样无所不能。  </p>
+<h5 id="3-3-1-实现一个简单的AST-matcher"><a href="#3-3-1-实现一个简单的AST-matcher" class="headerlink" title="3.3.1 实现一个简单的AST matcher"></a>3.3.1 实现一个简单的AST matcher</h5><p>我们看看我们如何用AST matcher来改写<code>MainCallChecker</code>：</p>
+<p>首先写一个matcher：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">callExpr</span>(<span class="built_in">callee</span>(<span class="built_in">functionDecl</span>(<span class="built_in">hasName</span>(<span class="string">&quot;main&quot;</span>)))). <span class="built_in">bind</span>(<span class="string">&quot;call&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>完整的检查器逻辑现在只需要写一行代码！剩下的就是编写检查程序并抛出错误报告。留神<code>bind(…)</code>命令是如何为应用它的AST节点分配名称的，以便将来参考。  </p>
+<p>我们需要做的第一件事是定义匹配器回调。 每当checker找到一些东西时，就会触发这个回调。 这个回调需要继承<code>MatchFinder::MatchCallback</code>并实现名为<code>run(…)</code>的方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Callback</span> : <span class="keyword">public</span> MatchFinder ::MatchCallback &#123;</span><br><span class="line">        BugReporter &amp;BR;</span><br><span class="line">        AnalysisDeclContext *ADC;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">run</span><span class="params">(<span class="type">const</span> MatchFinder ::MatchResult &amp;Result)</span></span>;</span><br><span class="line">        <span class="built_in">Callback</span>(BugReporter &amp;Reporter, AnalysisDeclContext *Context)</span><br><span class="line">            : <span class="built_in">BR</span>(Reporter), <span class="built_in">ADC</span>(Context) &#123;&#125;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125; <span class="comment">// namespace</span></span><br></pre></td></tr></table></figure>
+
+<p>理想情况下，唯一需要做的就是抛出一个错误报告。不过matcher并不能永远写清楚逻辑细节，所以留一些检查工作在回调函数中也是很正常的事。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">Callback::run</span><span class="params">(<span class="type">const</span> MatchFinder ::MatchResult &amp;Result)</span> </span>&#123;</span><br><span class="line">    <span class="type">const</span> CallExpr *CE = Result.Nodes.<span class="built_in">getStmtAs</span>&lt;CallExpr&gt;(<span class="string">&quot;call&quot;</span>);</span><br><span class="line">    <span class="built_in">assert</span>(CE);</span><br><span class="line">    SourceRange R = CE-&gt;<span class="built_in">getSourceRange</span>();</span><br><span class="line">    PathDiagnosticLocation ELoc =</span><br><span class="line">        PathDiagnosticLocation ::<span class="built_in">createBegin</span>(CE, BR.<span class="built_in">getSourceManager</span>(), ADC);</span><br><span class="line">    BR.<span class="built_in">EmitBasicReport</span>(ADC-&gt;<span class="built_in">getDecl</span>(), <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>,</span><br><span class="line">                       <span class="string">&quot;Call to main&quot;</span>, ELoc, R);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在毁掉函数中，我们拿到了call expression的名字“call”（正是我们在checker）中通过<code>bind()</code>定义的。在matcher中，我们确信这些调用表达式是存在的，所以我们可以进行断言。</p>
+<p>然后该去定义checker了。这次我们试试整TU的匹配：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">MainCallCheckerMatchers</span> : <span class="keyword">public</span> Checker&lt;check ::EndOfTranslationUnit&gt; &#123;</span><br><span class="line">        <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">checkEndOfTranslationUnit</span><span class="params">(<span class="type">const</span> TranslationUnitDecl *TU, AnalysisManager &amp;AM, BugReporter &amp;B)</span> <span class="type">const</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125; <span class="comment">// namespace</span></span><br></pre></td></tr></table></figure>
+
+<p>最后，在回调checker中，我们需要构建matcher：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">MainCallCheckerMatchers::checkEndOfTranslationUnit</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="type">const</span> TranslationUnitDecl *TU, AnalysisManager &amp;AM, BugReporter &amp;B)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    MatchFinder F;</span><br><span class="line">    <span class="function">Callback <span class="title">CB</span><span class="params">(B, AM.getAnalysisDeclContext(TU))</span></span>;</span><br><span class="line">    F.<span class="built_in">addMatcher</span>(</span><br><span class="line">        <span class="built_in">stmt</span>(<span class="built_in">hasDescendant</span>(</span><br><span class="line">            <span class="built_in">callExpr</span>(<span class="built_in">callee</span>(<span class="built_in">functionDecl</span>(<span class="built_in">hasName</span>(<span class="string">&quot;main&quot;</span>)))).<span class="built_in">bind</span>(<span class="string">&quot;call&quot;</span>))),</span><br><span class="line">        &amp;CB);</span><br><span class="line">    F.<span class="built_in">matchAST</span>(AM.<span class="built_in">getASTContext</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>matchAST(...)</code>方法会match整个TU的AST。至此为止，整个checker就写好了。</p>
+<p>从<code>AnalysisManager</code>中获得的<code>ASTContext</code>，包含了整个程序的AST，以及关于AST的各种元信息，例如编译期间强加的特定于实现的特征（implementation-specific traits）。</p>
+<h5 id="3-3-2-复用matcher"><a href="#3-3-2-复用matcher" class="headerlink" title="3.3.2 复用matcher"></a>3.3.2 复用matcher</h5><p>如果一个子特征在matcher中被重复使用，可以保存并复用。例如，下面的例子中，TypeM就是这样：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">TypeMatcher TypeM = <span class="built_in">templateSpecializationType</span>(). <span class="built_in">bind</span>(<span class="string">&quot;type&quot;</span>);</span><br><span class="line">DeclarationMatcher VarDeclM = <span class="built_in">varDecl</span>(<span class="built_in">hasType</span>(TypeM)). <span class="built_in">bind</span>(<span class="string">&quot;decl&quot;</span>);</span><br><span class="line">StatementMatcher TempObjM = <span class="built_in">temporaryObjectExpr</span>(<span class="built_in">hasType</span>(TypeM )).<span class="built_in">bind</span>(<span class="string">&quot;stmt&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="3-3-3-定义定制化matcher"><a href="#3-3-3-定义定制化matcher" class="headerlink" title="3.3.3 定义定制化matcher"></a>3.3.3 定义定制化matcher</h5><p>有时，单纯组合起预定义的checker不足以实现所需的检查。在这种情况下，可以实现一个自定义AST匹配器。这只需要几行代码，很多例子可以在<code>ASTMatchers.h</code>中找到。 在checker中实现自定义的AST matcher时，需要将其放入<code>clang::ast_matchers</code>命名空间。 下面的例子定义了一个自定义声明匹配器，它匹配声明为Union而不是Struct的<code>RecordDecl</code>节点:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> clang&#123;</span><br><span class="line">    <span class="keyword">namespace</span> ast_matchers&#123;</span><br><span class="line">        <span class="built_in">AST_MATCHER</span>(RecordDecl, isUnion)&#123;</span><br><span class="line">            <span class="keyword">return</span> Node.<span class="built_in">isUnion</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-3-4-匹配特定的statement"><a href="#3-3-4-匹配特定的statement" class="headerlink" title="3.3.4 匹配特定的statement"></a>3.3.4 匹配特定的statement</h5><p>正如之前所提到的，<code>matchAST(...)</code>匹配整个TU的AST。不过有时候只想要AST的特定一部分，那么可以试试<code>match(...)</code>方法。</p>
+<p>举例来说，我们试试用<code>check::ASTCodeBody</code>来实现<code>MainCallChecker</code>。不过，<code>match(...)</code>会匹配statement本身，而<code>matchAST(...)</code>会匹配自身和子statement，所以我们要修改我们的matcher：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">MainCallCheckerMatchers::checkASTCodeBody</span><span class="params">(<span class="type">const</span> Decl *D,AnalysisManager &amp;AM,BugReporter &amp;BR)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    MatchFinder F;</span><br><span class="line">    <span class="function">Callback <span class="title">CB</span><span class="params">(BR, AM.getAnalysisDeclContext(D))</span></span>;</span><br><span class="line">    F.<span class="built_in">addMatcher</span>(<span class="built_in">stmt</span>(<span class="built_in">hasDescendant</span>(<span class="built_in">callExpr</span>(<span class="built_in">callee</span>(<span class="built_in">functionDecl</span>(<span class="built_in">hasName</span>(<span class="string">&quot;main&quot;</span>)))).<span class="built_in">bind</span>(<span class="string">&quot;call&quot;</span>))),&amp;CB);</span><br><span class="line">    F.<span class="built_in">match</span>(*(D-&gt;<span class="built_in">getBody</span>()), AM.<span class="built_in">getASTContext</span>()); <span class="comment">// wrong in original text</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-4-常量折叠"><a href="#3-4-常量折叠" class="headerlink" title="3.4 常量折叠"></a>3.4 常量折叠</h4><p>从表达式的AST中并不容易看出它实际上代表一个常量值。一个表达式可能包含对常量变量的类型转换和引用，将其折叠为实际值是不那么容易的。 Clang中有一个现成的解决方案：只需使用Expr的<code>EvaluateAsInt(…)</code>方法:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> Expr *E =<span class="comment">/* some AST expression you are interested in */</span> </span><br><span class="line">    llvm::APSInt Result;</span><br><span class="line"><span class="keyword">if</span> (E-&gt;<span class="built_in">EvaluateAsInt</span>(Result, ACtx,Expr::SE_AllowSideEffects)) &#123; </span><br><span class="line">    <span class="comment">/* we managed to obtain the value of the expression */</span></span><br><span class="line">    <span class="type">uint64_t</span> IntResult = Result.<span class="built_in">getLimitedValue</span>();   <span class="comment">/* ... */</span></span><br><span class="line">&#125; <span class="keyword">else</span> &#123; </span><br><span class="line">    <span class="comment">/* the expression doesn ’t fold to into a constant value */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-5-延伸阅读"><a href="#3-5-延伸阅读" class="headerlink" title="3.5 延伸阅读"></a>3.5 延伸阅读</h4><p><a target="_blank" rel="noopener" href="http://llvm.org/devmtg/2013-04/videos/klimek-vhres.mov">http://llvm.org/devmtg/2013-04/videos/klimek-vhres.mov</a> </p>
+<p><a target="_blank" rel="noopener" href="http://clang.llvm.org/docs/LibASTMatchersReference.html">http://clang.llvm.org/docs/LibASTMatchersReference.html</a> </p>
+<p><a target="_blank" rel="noopener" href="http://clang.llvm.org/doxygen/classclang_1_1Stmt.html">http://clang.llvm.org/doxygen/classclang_1_1Stmt.html</a> </p>
+<p><a target="_blank" rel="noopener" href="http://clang.llvm.org/doxygen/classclang_1_1Decl.html">http://clang.llvm.org/doxygen/classclang_1_1Decl.html</a></p>
+<p><a target="_blank" rel="noopener" href="http://clang.llvm.org/doxygen/classclang_1_1Type.html">http://clang.llvm.org/doxygen/classclang_1_1Type.html</a></p>
+<h4 id=""><a href="#" class="headerlink" title=""></a></h4>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/04/25/CSA%20Guide%20CN%20CH2/" class="post-title-link" itemprop="url">Clang Static Analyzer · Checker Developer's Guide [CN] (2)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-25 17:14:18 / Modified: 17:14:36" itemprop="dateCreated datePublished" datetime="2022-04-25T17:14:18+08:00">2022-04-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CSA/" itemprop="url" rel="index"><span itemprop="name">CSA</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="CH2-checker的分类-lt-gt-程序的表示方法"><a href="#CH2-checker的分类-lt-gt-程序的表示方法" class="headerlink" title="CH2 checker的分类 &lt;-&gt; 程序的表示方法"></a>CH2 checker的分类 &lt;-&gt; 程序的表示方法</h3><p>在开发一个checker之前，你首先要确定，是需要一个path-sensitive的checker，还是只在语法层面检查就够了。</p>
+<p>path-sensitive的检查通常比编译本身要慢很多倍；这其中，绝大多数时间消耗是因为内核需要构建必要的数据结构。checker本身通常意义上是轻量的，除非其中包含了过大过重的运算量。所以，需要抉择的是「是否引入path-sensitive的checker」，而不需要在之后考虑「再引入一个path-sensitive的checker会有多大负担」。</p>
+<p>与之相对，如果只是检查语法(syntax)，会和编译过程一样迅速，甚至更快（因为不需要产生目标代码），不过收集的可用信息也会更少。</p>
+<p>想要理解这两种checker的区别，最简单的就是看它们是如何表示程序本身的。</p>
+<p>我们以下面这段代码为例，从其对应的AST(Abstract-Syntax-Tree, 抽象语法树)，CFG(Control-Flow-Graph, 控制流图)，EG(Exploded-Graph, 爆炸图)来深入探讨：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">(<span class="type">int</span> x)</span></span>&#123;</span><br><span class="line">    <span class="type">int</span> y, z;</span><br><span class="line">    <span class="keyword">if</span>(x == <span class="number">0</span>)</span><br><span class="line">        y = <span class="number">5</span>;</span><br><span class="line">    <span class="keyword">if</span>(!x)</span><br><span class="line">        z = <span class="number">6</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-1-抽象语法树（Abstract-Syntax-Tree）"><a href="#2-1-抽象语法树（Abstract-Syntax-Tree）" class="headerlink" title="2.1 抽象语法树（Abstract Syntax Tree）"></a>2.1 抽象语法树（Abstract Syntax Tree）</h4><p>clang的抽象语法树是由编译器前端生成的一种结构，是一种程序的中间表示（IR, Intermediate Representation）。二进制代码生成是在AST上进行的。与GCC的C&#x2F;C++ 编译器所产生的AST不同，clang的AST不仅有正确编译程序所必要的信息，还有关于程序源码的完整信息，包括：每个树上的元素在源代码里的位置、在原代码中是如何撰写的（甚至预处理之前是如何撰写的）。这使得AST可以作为源代码层面分析程序的易用框架。</p>
+<p>以下是test.c的AST:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">$ clang-7 -cc1 -ast-dump /tmp/foo.cpp</span><br><span class="line">TranslationUnitDecl 0x32173f8 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt;</span><br><span class="line">|-TypedefDecl 0x3217cd0 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __int128_t <span class="string">&#x27;__int128&#x27;</span></span><br><span class="line">| `-BuiltinType 0x3217990 <span class="string">&#x27;__int128&#x27;</span></span><br><span class="line">|-TypedefDecl 0x3217d38 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __uint128_t <span class="string">&#x27;unsigned __int128&#x27;</span></span><br><span class="line">| `-BuiltinType 0x32179b0 <span class="string">&#x27;unsigned __int128&#x27;</span></span><br><span class="line">|-TypedefDecl 0x3218078 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __NSConstantString <span class="string">&#x27;__NSConstantString_tag&#x27;</span></span><br><span class="line">| `-RecordType 0x3217e20 <span class="string">&#x27;__NSConstantString_tag&#x27;</span></span><br><span class="line">|   `-CXXRecord 0x3217d88 <span class="string">&#x27;__NSConstantString_tag&#x27;</span></span><br><span class="line">|-TypedefDecl 0x32517e0 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __builtin_ms_va_list <span class="string">&#x27;char *&#x27;</span></span><br><span class="line">| `-PointerType 0x32180d0 <span class="string">&#x27;char *&#x27;</span></span><br><span class="line">|   `-BuiltinType 0x3217490 <span class="string">&#x27;char&#x27;</span></span><br><span class="line">|-TypedefDecl 0x3251b18 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __builtin_va_list <span class="string">&#x27;__va_list_tag [1]&#x27;</span></span><br><span class="line">| `-ConstantArrayType 0x3251ac0 <span class="string">&#x27;__va_list_tag [1]&#x27;</span> 1 </span><br><span class="line">|   `-RecordType 0x32518d0 <span class="string">&#x27;__va_list_tag&#x27;</span></span><br><span class="line">|     `-CXXRecord 0x3251830 <span class="string">&#x27;__va_list_tag&#x27;</span></span><br><span class="line">`-FunctionDecl 0x3251c40 &lt;/tmp/foo.cpp:1:1, line:7:1&gt; line:1:6 foo <span class="string">&#x27;void (int)&#x27;</span></span><br><span class="line">  |-ParmVarDecl 0x3251b80 &lt;col:10, col:14&gt; col:14 used x <span class="string">&#x27;int&#x27;</span></span><br><span class="line">  `-CompoundStmt 0x3252098 &lt;col:16, line:7:1&gt;</span><br><span class="line">    |-DeclStmt 0x3251e30 &lt;line:2:5, col:13&gt;</span><br><span class="line">    | |-VarDecl 0x3251d40 &lt;col:5, col:9&gt; col:9 used y <span class="string">&#x27;int&#x27;</span></span><br><span class="line">    | `-VarDecl 0x3251db8 &lt;col:5, col:12&gt; col:12 used z <span class="string">&#x27;int&#x27;</span></span><br><span class="line">    |-IfStmt 0x3251f40 &lt;line:3:5, line:4:13&gt;</span><br><span class="line">    | |-&lt;&lt;&lt;<span class="string">NULL&gt;&gt;&gt;</span></span><br><span class="line"><span class="string">    | |-&lt;&lt;&lt;NULL</span>&gt;&gt;&gt;</span><br><span class="line">    | |-BinaryOperator 0x3251ea8 &lt;line:3:8, col:13&gt; <span class="string">&#x27;bool&#x27;</span> <span class="string">&#x27;==&#x27;</span></span><br><span class="line">    | | |-ImplicitCastExpr 0x3251e90 &lt;col:8&gt; <span class="string">&#x27;int&#x27;</span> &lt;LValueToRValue&gt;</span><br><span class="line">    | | | `-DeclRefExpr 0x3251e48 &lt;col:8&gt; <span class="string">&#x27;int&#x27;</span> lvalue ParmVar 0x3251b80 <span class="string">&#x27;x&#x27;</span> <span class="string">&#x27;int&#x27;</span></span><br><span class="line">    | | `-IntegerLiteral 0x3251e70 &lt;col:13&gt; <span class="string">&#x27;int&#x27;</span> 0</span><br><span class="line">    | |-BinaryOperator 0x3251f18 &lt;line:4:9, col:13&gt; <span class="string">&#x27;int&#x27;</span> lvalue <span class="string">&#x27;=&#x27;</span></span><br><span class="line">    | | |-DeclRefExpr 0x3251ed0 &lt;col:9&gt; <span class="string">&#x27;int&#x27;</span> lvalue Var 0x3251d40 <span class="string">&#x27;y&#x27;</span> <span class="string">&#x27;int&#x27;</span></span><br><span class="line">    | | `-IntegerLiteral 0x3251ef8 &lt;col:13&gt; <span class="string">&#x27;int&#x27;</span> 5</span><br><span class="line">    | `-&lt;&lt;&lt;<span class="string">NULL&gt;&gt;&gt;</span></span><br><span class="line"><span class="string">    `-IfStmt 0x3252060 &lt;line:5:5, line:6:13&gt;</span></span><br><span class="line"><span class="string">      |-&lt;&lt;&lt;NULL</span>&gt;&gt;&gt;</span><br><span class="line">      |-&lt;&lt;&lt;<span class="string">NULL&gt;&gt;&gt;</span></span><br><span class="line"><span class="string">      |-UnaryOperator 0x3251fd0 &lt;line:5:8, col:9&gt; &#x27;bool&#x27; prefix &#x27;!&#x27; cannot overflow</span></span><br><span class="line"><span class="string">      | `-ImplicitCastExpr 0x3251fb8 &lt;col:9&gt; &#x27;bool&#x27; &lt;IntegralToBoolean&gt;</span></span><br><span class="line"><span class="string">      |   `-ImplicitCastExpr 0x3251fa0 &lt;col:9&gt; &#x27;int&#x27; &lt;LValueToRValue&gt;</span></span><br><span class="line"><span class="string">      |     `-DeclRefExpr 0x3251f78 &lt;col:9&gt; &#x27;int&#x27; lvalue ParmVar 0x3251b80 &#x27;x&#x27; &#x27;int&#x27;</span></span><br><span class="line"><span class="string">      |-BinaryOperator 0x3252038 &lt;line:6:9, col:13&gt; &#x27;int&#x27; lvalue &#x27;=&#x27;</span></span><br><span class="line"><span class="string">      | |-DeclRefExpr 0x3251ff0 &lt;col:9&gt; &#x27;int&#x27; lvalue Var 0x3251db8 &#x27;z&#x27; &#x27;int&#x27;</span></span><br><span class="line"><span class="string">      | `-IntegerLiteral 0x3252018 &lt;col:13&gt; &#x27;int&#x27; 6</span></span><br><span class="line"><span class="string">      `-&lt;&lt;&lt;NULL</span>&gt;&gt;&gt;</span><br></pre></td></tr></table></figure>
+
+<p>阅读AST的过程与阅读源程序是很类似的，注释中标明了很多源代码上不那么明显可见的语义（semantic）。例如，你可以直接读出，第3行的x是作为foo(…)函数的参数传入的，而第4行的y是一个在第2行声明的局部变量。</p>
+<p>不过，在构造AST的过程中，编译器并不会试图理解或建模程序究竟在做什么。它不会构建不同分支选择所导致的不同的程序路径，更不会去试图预测不同的分支会发生什么。</p>
+<p>基于AST能做的最好的事情莫过于检测不想要的代码模式（code pattern）。例如，可能我们在某个项目中不允许C风格的强制类型转换。那么我们就可以在语法树上所有的C风格强制类型转换节点上报警。更复杂一点的例子，比如“要求所有函数的返回值都应当进行检验”。</p>
+<p>在CSA的默认发行版中，<code>security.InsecureAPI</code>分类中的许多checker都是AST checker的好例子。</p>
+<p>不过，如果你想要检查点复杂的情况，AST checker的能力没有那么强。比如说在检查除零时，它可以检查出<code>y = x / 0;</code> 但很难查出<code>z=0; ...y = x/z;</code> 这种时候，就需要一些更强力的工具了。</p>
+<h4 id="2-2-控制流图（Control-Flow-Graph）"><a href="#2-2-控制流图（Control-Flow-Graph）" class="headerlink" title="2.2 控制流图（Control Flow Graph）"></a>2.2 控制流图（Control Flow Graph）</h4><p>控制流图使用图来表示程序执行中所有可能经过的路径。CFG 是为每个函数体单独构造的，每一个节点代表一个内部不包含任何分支的基本语句块（这意味着其中是顺序执行的）。每个基本块以“终结语句”结束，“终结语句”要么是一个分支语句，要么是函数的return。这个基本块的出边会连到根据“终结语句”的条件判断可达的其它基本语句块。</p>
+<p>CSA中有一个简单的输出CFG的方法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$clang</span> -cc1 -analyze -analyzer-checker=debug.DumpCFG test.c</span><br></pre></td></tr></table></figure>
+
+
+
+<p>或者（需要Graphviz，生成dot图，且需要DEBUG的clang）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$./bin/clang  -cc1 -analyze -analyzer-checker=debug.ViewCFG -analyzer-viz-egraph-graphviz test.C</span><br><span class="line"><span class="variable">$dot</span> xxxx.dot -Tpng -o test.png</span><br></pre></td></tr></table></figure>
+
+
+
+<p>这里是源码意义上的CFG。如果想要查看中间码的CFG，可以：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$clang</span> -S -emit-llvm test.c -o test.bc</span><br><span class="line"><span class="variable">$opt</span> -view-cfg test.bc</span><br><span class="line"><span class="variable">$dot</span> xxxx.dot -Tpng -o test.png</span><br></pre></td></tr></table></figure>
+
+
+
+<p>基于CFG的分析有利于创建旨在做安全检查的checker，尤其是那些需要考虑程序所有的可能路径的。举例来说，如果你想要确保某个特定的分支条件永远算出来是<code>false</code>，使得其下的某些代码是不可达的，那么你将不得不接触这个条件中的每一个变量的定义——这时候，CFG就恰是你所需要的。</p>
+<p>CFG可以很容易从AST构建。但是，基于CFG的分析通常不是很容易实现，因为CFG并不提供实时的数据流分析。为了达到这个目的，需要写额外的代码。Clang框架本身提供了一些“开箱即用”的基于CFG的checker，例如<code>LivenessAnalysis</code> （这也是CSA内存模型中的关键一点）。</p>
+<p>在CSA的默认发行版中，<code>deadcode.DeadStores</code>是一个很好的基于CFG的checker的例子。</p>
+<p>有时候，基于CFG的分析会和path-sensitive的分析组合使用：用path-sensitive的部分来检查潜在的缺陷位置，再用基于CFG的启发式算法来检查相连的其他路径以提高真阳性率（True Positive Rate）。<code>deadcode.UnreachableCode</code>就是一个结合path-sensitive和CFG的很好例子。</p>
+<p>但是，细心的读者会在foo()函数的CFG中迅速发现一个缺陷：CFG无法显示分支条件的相关性。实际上<code>x==0</code>和<code>!x</code>的真值是相同的，故而两个分支条件注定同真或同假，所以从程序开始达到结尾实际上只存在两条路径：</p>
+<ul>
+<li>要么<code>x==0</code>，串行执行整个代码给y、z赋值。</li>
+<li>要么<code>x!=0</code>，直接跳转到结尾。</li>
+</ul>
+<h4 id="2-3-爆炸图（Exploded-Graph）"><a href="#2-3-爆炸图（Exploded-Graph）" class="headerlink" title="2.3 爆炸图（Exploded Graph）"></a>2.3 爆炸图（Exploded Graph）</h4><p>CSA的爆炸图是path-sensitive分析器引擎的基础数据结构。分析器核心试图“解释”程序代码，并分别处理通过CFG的所有不同路径（即使它们通过相同的语句或基本语句块），因此叫作“爆炸”（explode）。 爆炸图包含所有由分析器引擎探索过的路径，并保有每个语句中每个路径上的程序状态的信息。图中的每个点（我们称作“爆炸点”），是一个二元组：<code>（程序当前状态，当前被分析的程序节点）</code>。</p>
+<p>你可以这样使用这个checker来查看爆炸图：</p>
+<p><code>clang -cc1 -analyze -analyzer-checker=debug.ViewExplodedGraph test.c</code></p>
+<p>实际上，爆炸图通常很大很大，例如<code>foo()</code>产生的爆炸图会有超过50个节点。当到达一个CFG中的终结符时，比如一个if语句，因为不确定条件判断的结果，所以并不知道会走向哪条分支。在爆炸图中，就会兵分两路，在每条路上，都假定进入该条路的条件成立。例如<code>if(x)</code>中，<code>then-branch</code>的条件是<code>x ∈ [0,0]</code>，而<code>else-branch</code>的条件是<code> x ∈ [INT_MIN,-1] ∪ [1, INT_MAX]</code>。这个条件会被收集起来，直到这个符号达到生命周期的尽头。</p>
+<p>例如，在已经收集了<code>x==0</code>条件的前提下，<code>!x</code>的真值是可判定的，而不再是一个未定值。而此时关于<code>y</code>的信息则因为y已经到达生命周期的尽头而不再存储。</p>
+<p>爆炸图中存储了详尽的信息，包含分析器核心对程序执行所能做出的”最佳假设”。 此外，与基于AST和CFG的分析不同，path-sensitive的CSA checker很少被动地读取爆炸图，而是积极地参与其构建，添加自己的节点、绑定(binding)、假设、作特定于检查器的标记，并根据自己的意愿在分解图中分隔路径。</p>
+<h4 id="2-4-延伸阅读"><a href="#2-4-延伸阅读" class="headerlink" title="2.4 延伸阅读"></a>2.4 延伸阅读</h4><p>关于AST：<a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/IntroductionToTheClangAST.html">https://clang.llvm.org/docs/IntroductionToTheClangAST.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B03/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1035,178 +1310,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
-      <meta itemprop="name" content="Asp">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/10/15/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-10-15 05:54:10" itemprop="dateCreated datePublished" datetime="2021-10-15T05:54:10+08:00">2021-10-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-03-21 18:22:06" itemprop="dateModified" datetime="2022-03-21T18:22:06+08:00">2022-03-21</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/[Sigsegv]chkstk_ms()/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
-      <meta itemprop="name" content="Asp">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/10/15/%5BSigsegv%5Dchkstk_ms()/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-10-15 05:54:10" itemprop="dateCreated datePublished" datetime="2021-10-15T05:54:10+08:00">2021-10-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-03-21 18:22:06" itemprop="dateModified" datetime="2022-03-21T18:22:06+08:00">2022-03-21</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="SigSEGV-bison-chkstk-ms"><a href="#SigSEGV-bison-chkstk-ms" class="headerlink" title="[SigSEGV]bison - chkstk_ms()"></a>[SigSEGV]bison - chkstk_ms()</h1><p>在用bison写parser的时候遇到这个问题，感觉并不是偶然现象，有必要仔细探究一下，判断其对于后续的影响。</p>
-<h3 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h3><p>在语法分析器中，需要暂存当前已移入(shifted)而尚未被规约(not reduced yet)的符号们。举例说明，当解析<code>a+b*c</code>这个表达式，尚未遇到结尾符号<code>c</code>时，会需要暂时保存前面所有的token。因为只有遇到了<code>c</code>，才可以把<code>b*c</code>规约成一个expression，进而和<code>a</code>再规约成更高级的expression。所以在语法分析器设计的时候，为了避免符号栈爆炸，常常会需要仔细考虑表达式和符号的结合性。</p>
-<p>在我个人看来，左右结合是各有利弊的。具体来说：</p>
-<ul>
-<li>左结合，也即形如<code>((a+b)+c)</code>的优点在于，减少语法分析器中暂存的移入栈中的符号的个数。</li>
-<li>右结合，也即形如<code>(a+(b+c))</code>的优点在于，可以在从根节点开始向下访问的时候，首先访问到头结点，并且在每一层都可以实时地知道左节点对右节点的影响。这来自于我的一种直觉：“上文对下文的影响”往往比“下文对上文的影响”多。在一些需要考虑前一个节点是谁来做判断的时候，根据我的经验，这样写更加符合我们的认知习惯。</li>
-</ul>
-<p>我们的parser在var list和statement中都采用了右结合。这在设计之初并没有被我们重视。但在输入规模远超预期的时候，它的影响就体现出来了。</p>
-<h3 id="问题还原"><a href="#问题还原" class="headerlink" title="问题还原"></a>问题还原</h3><p>产生parser的过程并没有任何问题，但在实际parsing的过程中，我们常常会遇到这样的报错：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cygwin</span></span><br><span class="line">$ ./run xxx.VTL</span><br><span class="line">Segmentation fault(core dumped)</span><br><span class="line"></span><br><span class="line">$ gdb ./run </span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thread 1 <span class="string">&quot;run&quot;</span> received signal SIGSEGV, Segmentation fault.</span><br><span class="line">___chkstk_ms () at /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S:126</span><br><span class="line">126     /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S: No such file or directory.</span><br><span class="line">(gdb) back</span><br><span class="line"><span class="comment">#0  ___chkstk_ms ()</span></span><br><span class="line">    at /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S:126</span><br><span class="line"><span class="comment">#1  0x000000010040108a in VTLparse (</span></span><br><span class="line">    scanner=&lt;error reading variable: Cannot access memory at address 0x10033cd18&gt;, mod=&lt;error reading variable: Cannot access memory at address 0x10033cd10&gt;)</span><br><span class="line">    at parser.tab.c:1112</span><br><span class="line"><span class="comment">#2  0x00000001004099d2 in VTL_parse_module_from_file_to_file (</span></span><br><span class="line">    filename=0xffffcc8c <span class="string">&quot;xxx.VTL&quot;</span>, fp=0x80004a608) at module.c:52</span><br><span class="line"><span class="comment">#3  0x0000000100409a75 in VTL_parse_module_from_file_to_string (</span></span><br><span class="line">    filename=0xffffcc8c <span class="string">&quot;xxx.VTL&quot;</span>) at module.c:64</span><br><span class="line"><span class="comment">#4  0x0000000100409d44 in main (argc=2, argv=0xffffcc40) at main.c:12</span></span><br></pre></td></tr></table></figure>
-
-<p>这个错误并不每次出现，在linux中通常不会出现这个问题，但是在windows下，同样的情况，就有可能会出现这个问题。windows中也并不总是出现这个问题。</p>
-<p>最初遇到这个问题的时候，我用<code>valgrind</code>进行内存检查。发现出现了invalid read &amp; write。经排查，发现是bison中未被纳入语法树的节点并不会被自动回收（例如<code>a+b</code>，加号这个token并不会被我并入二叉树，只是在它们产生的父节点中填一个key叫expr_add）。语法树小的时候这微不足道，大的时候这还是很可观的。于是我手动书写了无效节点的回收，然后<code>valgrind</code>检查中就没有了任何错误。但是问题并没有消除。</p>
-<p>在<code>cygwin</code>中，确乎是出现了疑似内存访问越界的bug（也即这个SIGSEGV）。逐句调试的时候会发现，其出错发生在调用某函数的一瞬间。（甚至无法达到函数中的第一句语句），就好像是函数压栈的时候出了问题。在进行了很多无效的尝试之后，我修改了bison中的栈大小，从<code>8192</code>改成了<code>16384</code>，就解决了问题。由此分析，好像是栈耗尽产生的问题。</p>
-<p>但今天，一个上限设置为<code>163840</code>的parser出现了同样的问题。而我将其改大并没有解决，反倒是改小解决了问题。这就非常让人在意。于是，我去研究了一下这个chkstk_ms()究竟是何方神圣，又是怎么引起了这一次次的错误。</p>
-<h3 id="问题溯源"><a href="#问题溯源" class="headerlink" title="问题溯源"></a>问题溯源</h3><p>在GCC的<a target="_blank" rel="noopener" href="https://github.com/gcc-mirror/gcc/blob/master/libgcc/config/i386/cygwin.S">源码</a>里，<code>__chkstk_ms()</code>的部分是：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">// gcc, cygwin.S</span><br><span class="line">___chkstk_ms:</span><br><span class="line">	pushq	%rcx			/* save temps */</span><br><span class="line">	cfi_push(%rcx)</span><br><span class="line">	pushq	%rax</span><br><span class="line">	cfi_push(%rax)</span><br><span class="line">	cmpq	$0x1000, %rax		/* &gt; 4k ?*/</span><br><span class="line">	leaq	24(%rsp), %rcx		/* point past return addr */</span><br><span class="line">	jb	2f</span><br><span class="line"></span><br><span class="line">1:	subq	$0x1000, %rcx  		/* yes, move pointer down 4k */</span><br><span class="line">	orq	$0x0, (%rcx)   		/* probe there */</span><br><span class="line">	subq	$0x1000, %rax  	 	/* decrement count */</span><br><span class="line">	cmpq	$0x1000, %rax</span><br><span class="line">	ja	1b			/* and do it again */</span><br><span class="line"></span><br><span class="line">2:	subq	%rax, %rcx</span><br><span class="line">	orq	$0x0, (%rcx)		/* less than 4k, just peek here */</span><br><span class="line"></span><br><span class="line">	popq	%rax</span><br><span class="line">	cfi_pop(%rax)</span><br><span class="line">	popq	%rcx</span><br><span class="line">	cfi_pop(%rcx)</span><br><span class="line">	ret</span><br><span class="line">	cfi_endproc()</span><br></pre></td></tr></table></figure>
-
-<p>所做的是：接受一个栈大小，以rax传入，然后把它调整到一个4k的倍数，然后以4k为大小向下调整。 </p>
-<p>借此分析，我们所遇到的问题是，将一个栈的大小传给了<code>chkstk_ms()</code>后，后者访问了该栈的内存页，但引发了崩溃。这种崩溃，根据MSDN的说法，是由<code>GUARD PAGE</code>产生的。在window中，有<code>GUARD PAGE</code>的设定：在分配了若干长度的一个数据结构后，会紧跟着在后面设置一个<code>GUARD PAGE</code>，以避免越界。其利用CPU的异常机制，将<code>PAGE_PRESET</code>位标志为0，访问该页的时候，就会触发一个<code>\#PAGE FAULT</code> 异常，操作系统的事先定义好的处理函数就会被调用。</p>
-<p>stackdump信息为：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Exception: STATUS_STACK_OVERFLOW at rip=00100409E66^M</span><br><span class="line">rax=0000000000148338 rbx=000000018023E7A0 rcx=00000000FFE03A28^M</span><br><span class="line">rdx=00000000FFFFCA78 rsi=0000000000000000 rdi=0000000000000000^M</span><br><span class="line">r8 =0000000000000000 r9 =0000000000000016 r10=0000000100000000^M</span><br><span class="line">r11=00000001004085A2 r12=00000000FFFFCC80 r13=00000000FFFFCDF0^M</span><br><span class="line">r14=0000000000000000 r15=0000000000000000^M</span><br><span class="line">rbp=00000000FFFFCBC0 rsp=00000000FFFFCA10^M</span><br><span class="line">program=\\wsl$\Centos7\root\vtlparser\vtlparser\run, pid 1329, thread ^M</span><br><span class="line">cs=0033 ds=002B es=002B fs=0053 gs=002B ss=002B^M</span><br><span class="line">Stack trace:^M</span><br><span class="line">Frame        Function    Args^M</span><br><span class="line">000FFFFCBC0  00100409E66 (0010040108A, 001004099D2, 00000000000, 00000000003)^M</span><br><span class="line">000FFFFCBC0  00000340338 (001004099D2, 00000000000, 00000000003, 00000000000)^M</span><br><span class="line">000FFFFCBC0  00800038840 (00000000000, 00000000003, 00000000000, 0018015CC05)^M</span><br><span class="line">000FFFFCBC0  0010040108A (00000000003, 00000000000, 0018015CC05, 001802B1E39)^M</span><br><span class="line">000FFFFCBC0  001004099D2 (001800485F2, 00100400000, 00180044AD5, 0010040A5D0)^M</span><br><span class="line">000FFFFCBC0  00100409A75 (00000000000, 00000000000, 001801B885A, 00000000000)^M</span><br><span class="line">000FFFFCBC0  00100409D44 (00000000020, 8080808080808080, 00180049E91, 00180048D30)^M</span><br><span class="line">000FFFFCCE0  00180049EFD (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">000FFFFFFF0  00180047856 (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">000FFFFFFF0  00180047904 (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">End of stack trace</span><br></pre></td></tr></table></figure>
-
-<p>rax为148338，取整为149000，在试图设置一个这个大小的栈时候，访问越界，踩到了guard page上。但这个大小远大于我们设置的大小，这很奇怪。</p>
-<p>而我们去查看bison产生的parser.tab.c，其中是这样写的：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">    <span class="comment">/* The OS might guarantee only one guard page at the bottom of the stack,</span></span><br><span class="line"><span class="comment">       and a page size can be as small as 4096 bytes.  So we cannot safely</span></span><br><span class="line"><span class="comment">       invoke alloca (N) if N exceeds 4096.  Use a slightly smaller number</span></span><br><span class="line"><span class="comment">       to allow for a few compiler-allocated temporary stack slots.  */</span></span><br><span class="line"><span class="meta">#   <span class="keyword">define</span> YYSTACK_ALLOC_MAXIMUM 4032 <span class="comment">/* reasonable circa 2006 */</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/* YYMAXDEPTH -- maximum size the stacks can grow to (effective only</span></span><br><span class="line"><span class="comment">   if the built-in stack extension method is used).</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">   Do not make this value too large; the results are undefined if</span></span><br><span class="line"><span class="comment">   YYSTACK_ALLOC_MAXIMUM &lt; YYSTACK_BYTES (YYMAXDEPTH)</span></span><br><span class="line"><span class="comment">   evaluated with infinite-precision integer arithmetic.  */</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> YYMAXDEPTH</span></span><br><span class="line"><span class="meta"># <span class="keyword">define</span> YYMAXDEPTH 10000</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">       </span><br><span class="line">       </span><br></pre></td></tr></table></figure>
-
-<p>原因就清晰了。</p>
-<p>简而言之，bison的作者认为，操作系统并不一定会在每个页后面（显然，由于虚拟内存的存在，页不一定是连续的）都创造一个guard page，而这会有些危险。所以它设置了，最大的页大小：4032个字节。（这小于linux中普通页的大小4096B，因而在作者看来是安全的）。而当我们把bison的栈的大小开得大于它的时候（也即大于32256），其将可能由于内置的一些运算产生不确定结果。</p>
-<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>综上，栈开得小的时候，可能会由于移进栈爆炸而出错，开得过大的时候，则可能出现不稳定的错误。Bison本身不认为会有人一次性处理超过一整个内存页的token，但不幸的是我们写了一个右结合，而输入的用例里，VAR LIST可能确实会很大。</p>
-<p>由于改动可能会引起下游的一系列修改（关于这一点的具体工作量存疑），暂时姑且把栈开一个较大值，待后续迫不得已的时候再进行修改。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1278,7 +1381,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-count">14</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

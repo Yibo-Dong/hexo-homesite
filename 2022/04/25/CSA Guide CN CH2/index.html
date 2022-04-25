@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="CH2 checker的分类 &lt;-&gt; 程序的表示方法在开发一个checker之前，你首先要确定，是需要一个path-sensitive的checker，还是只在语法层面检查就够了。 path-sensitive的检查通常比编译本身要慢很多倍；这其中，绝大多数时间消耗是因为内核需要构建必要的数据结构。checker本身通常意义上是轻量的，除非其中包含了过大过重的运算量。所以，需要抉择的是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Clang Static Analyzer · Checker Developer&#39;s Guide [CN] (2)">
+<meta property="og:url" content="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH2/index.html">
+<meta property="og:site_name" content="Good Good Study">
+<meta property="og:description" content="CH2 checker的分类 &lt;-&gt; 程序的表示方法在开发一个checker之前，你首先要确定，是需要一个path-sensitive的checker，还是只在语法层面检查就够了。 path-sensitive的检查通常比编译本身要慢很多倍；这其中，绝大多数时间消耗是因为内核需要构建必要的数据结构。checker本身通常意义上是轻量的，除非其中包含了过大过重的运算量。所以，需要抉择的是">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-04-25T09:14:18.009Z">
+<meta property="article:modified_time" content="2022-04-25T09:14:36.215Z">
+<meta property="article:author" content="Asp">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Clang Static Analyzer · Checker Developer's Guide [CN] (2) | Good Good Study</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Good Good Study</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Day Day up</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/CSA%20Guide%20CN%20CH2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Clang Static Analyzer · Checker Developer's Guide [CN] (2)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-25 17:14:18 / Modified: 17:14:36" itemprop="dateCreated datePublished" datetime="2022-04-25T17:14:18+08:00">2022-04-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CSA/" itemprop="url" rel="index"><span itemprop="name">CSA</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="CH2-checker的分类-lt-gt-程序的表示方法"><a href="#CH2-checker的分类-lt-gt-程序的表示方法" class="headerlink" title="CH2 checker的分类 &lt;-&gt; 程序的表示方法"></a>CH2 checker的分类 &lt;-&gt; 程序的表示方法</h3><p>在开发一个checker之前，你首先要确定，是需要一个path-sensitive的checker，还是只在语法层面检查就够了。</p>
+<p>path-sensitive的检查通常比编译本身要慢很多倍；这其中，绝大多数时间消耗是因为内核需要构建必要的数据结构。checker本身通常意义上是轻量的，除非其中包含了过大过重的运算量。所以，需要抉择的是「是否引入path-sensitive的checker」，而不需要在之后考虑「再引入一个path-sensitive的checker会有多大负担」。</p>
+<p>与之相对，如果只是检查语法(syntax)，会和编译过程一样迅速，甚至更快（因为不需要产生目标代码），不过收集的可用信息也会更少。</p>
+<p>想要理解这两种checker的区别，最简单的就是看它们是如何表示程序本身的。</p>
+<p>我们以下面这段代码为例，从其对应的AST(Abstract-Syntax-Tree, 抽象语法树)，CFG(Control-Flow-Graph, 控制流图)，EG(Exploded-Graph, 爆炸图)来深入探讨：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">(<span class="type">int</span> x)</span></span>&#123;</span><br><span class="line">    <span class="type">int</span> y, z;</span><br><span class="line">    <span class="keyword">if</span>(x == <span class="number">0</span>)</span><br><span class="line">        y = <span class="number">5</span>;</span><br><span class="line">    <span class="keyword">if</span>(!x)</span><br><span class="line">        z = <span class="number">6</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-1-抽象语法树（Abstract-Syntax-Tree）"><a href="#2-1-抽象语法树（Abstract-Syntax-Tree）" class="headerlink" title="2.1 抽象语法树（Abstract Syntax Tree）"></a>2.1 抽象语法树（Abstract Syntax Tree）</h4><p>clang的抽象语法树是由编译器前端生成的一种结构，是一种程序的中间表示（IR, Intermediate Representation）。二进制代码生成是在AST上进行的。与GCC的C&#x2F;C++ 编译器所产生的AST不同，clang的AST不仅有正确编译程序所必要的信息，还有关于程序源码的完整信息，包括：每个树上的元素在源代码里的位置、在原代码中是如何撰写的（甚至预处理之前是如何撰写的）。这使得AST可以作为源代码层面分析程序的易用框架。</p>
+<p>以下是test.c的AST:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">$ clang-7 -cc1 -ast-dump /tmp/foo.cpp</span><br><span class="line">TranslationUnitDecl 0x32173f8 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt;</span><br><span class="line">|-TypedefDecl 0x3217cd0 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __int128_t <span class="string">&#x27;__int128&#x27;</span></span><br><span class="line">| `-BuiltinType 0x3217990 <span class="string">&#x27;__int128&#x27;</span></span><br><span class="line">|-TypedefDecl 0x3217d38 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __uint128_t <span class="string">&#x27;unsigned __int128&#x27;</span></span><br><span class="line">| `-BuiltinType 0x32179b0 <span class="string">&#x27;unsigned __int128&#x27;</span></span><br><span class="line">|-TypedefDecl 0x3218078 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __NSConstantString <span class="string">&#x27;__NSConstantString_tag&#x27;</span></span><br><span class="line">| `-RecordType 0x3217e20 <span class="string">&#x27;__NSConstantString_tag&#x27;</span></span><br><span class="line">|   `-CXXRecord 0x3217d88 <span class="string">&#x27;__NSConstantString_tag&#x27;</span></span><br><span class="line">|-TypedefDecl 0x32517e0 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __builtin_ms_va_list <span class="string">&#x27;char *&#x27;</span></span><br><span class="line">| `-PointerType 0x32180d0 <span class="string">&#x27;char *&#x27;</span></span><br><span class="line">|   `-BuiltinType 0x3217490 <span class="string">&#x27;char&#x27;</span></span><br><span class="line">|-TypedefDecl 0x3251b18 &lt;&lt;<span class="string">invalid sloc&gt;&gt; &lt;invalid</span> sloc&gt; implicit __builtin_va_list <span class="string">&#x27;__va_list_tag [1]&#x27;</span></span><br><span class="line">| `-ConstantArrayType 0x3251ac0 <span class="string">&#x27;__va_list_tag [1]&#x27;</span> 1 </span><br><span class="line">|   `-RecordType 0x32518d0 <span class="string">&#x27;__va_list_tag&#x27;</span></span><br><span class="line">|     `-CXXRecord 0x3251830 <span class="string">&#x27;__va_list_tag&#x27;</span></span><br><span class="line">`-FunctionDecl 0x3251c40 &lt;/tmp/foo.cpp:1:1, line:7:1&gt; line:1:6 foo <span class="string">&#x27;void (int)&#x27;</span></span><br><span class="line">  |-ParmVarDecl 0x3251b80 &lt;col:10, col:14&gt; col:14 used x <span class="string">&#x27;int&#x27;</span></span><br><span class="line">  `-CompoundStmt 0x3252098 &lt;col:16, line:7:1&gt;</span><br><span class="line">    |-DeclStmt 0x3251e30 &lt;line:2:5, col:13&gt;</span><br><span class="line">    | |-VarDecl 0x3251d40 &lt;col:5, col:9&gt; col:9 used y <span class="string">&#x27;int&#x27;</span></span><br><span class="line">    | `-VarDecl 0x3251db8 &lt;col:5, col:12&gt; col:12 used z <span class="string">&#x27;int&#x27;</span></span><br><span class="line">    |-IfStmt 0x3251f40 &lt;line:3:5, line:4:13&gt;</span><br><span class="line">    | |-&lt;&lt;&lt;<span class="string">NULL&gt;&gt;&gt;</span></span><br><span class="line"><span class="string">    | |-&lt;&lt;&lt;NULL</span>&gt;&gt;&gt;</span><br><span class="line">    | |-BinaryOperator 0x3251ea8 &lt;line:3:8, col:13&gt; <span class="string">&#x27;bool&#x27;</span> <span class="string">&#x27;==&#x27;</span></span><br><span class="line">    | | |-ImplicitCastExpr 0x3251e90 &lt;col:8&gt; <span class="string">&#x27;int&#x27;</span> &lt;LValueToRValue&gt;</span><br><span class="line">    | | | `-DeclRefExpr 0x3251e48 &lt;col:8&gt; <span class="string">&#x27;int&#x27;</span> lvalue ParmVar 0x3251b80 <span class="string">&#x27;x&#x27;</span> <span class="string">&#x27;int&#x27;</span></span><br><span class="line">    | | `-IntegerLiteral 0x3251e70 &lt;col:13&gt; <span class="string">&#x27;int&#x27;</span> 0</span><br><span class="line">    | |-BinaryOperator 0x3251f18 &lt;line:4:9, col:13&gt; <span class="string">&#x27;int&#x27;</span> lvalue <span class="string">&#x27;=&#x27;</span></span><br><span class="line">    | | |-DeclRefExpr 0x3251ed0 &lt;col:9&gt; <span class="string">&#x27;int&#x27;</span> lvalue Var 0x3251d40 <span class="string">&#x27;y&#x27;</span> <span class="string">&#x27;int&#x27;</span></span><br><span class="line">    | | `-IntegerLiteral 0x3251ef8 &lt;col:13&gt; <span class="string">&#x27;int&#x27;</span> 5</span><br><span class="line">    | `-&lt;&lt;&lt;<span class="string">NULL&gt;&gt;&gt;</span></span><br><span class="line"><span class="string">    `-IfStmt 0x3252060 &lt;line:5:5, line:6:13&gt;</span></span><br><span class="line"><span class="string">      |-&lt;&lt;&lt;NULL</span>&gt;&gt;&gt;</span><br><span class="line">      |-&lt;&lt;&lt;<span class="string">NULL&gt;&gt;&gt;</span></span><br><span class="line"><span class="string">      |-UnaryOperator 0x3251fd0 &lt;line:5:8, col:9&gt; &#x27;bool&#x27; prefix &#x27;!&#x27; cannot overflow</span></span><br><span class="line"><span class="string">      | `-ImplicitCastExpr 0x3251fb8 &lt;col:9&gt; &#x27;bool&#x27; &lt;IntegralToBoolean&gt;</span></span><br><span class="line"><span class="string">      |   `-ImplicitCastExpr 0x3251fa0 &lt;col:9&gt; &#x27;int&#x27; &lt;LValueToRValue&gt;</span></span><br><span class="line"><span class="string">      |     `-DeclRefExpr 0x3251f78 &lt;col:9&gt; &#x27;int&#x27; lvalue ParmVar 0x3251b80 &#x27;x&#x27; &#x27;int&#x27;</span></span><br><span class="line"><span class="string">      |-BinaryOperator 0x3252038 &lt;line:6:9, col:13&gt; &#x27;int&#x27; lvalue &#x27;=&#x27;</span></span><br><span class="line"><span class="string">      | |-DeclRefExpr 0x3251ff0 &lt;col:9&gt; &#x27;int&#x27; lvalue Var 0x3251db8 &#x27;z&#x27; &#x27;int&#x27;</span></span><br><span class="line"><span class="string">      | `-IntegerLiteral 0x3252018 &lt;col:13&gt; &#x27;int&#x27; 6</span></span><br><span class="line"><span class="string">      `-&lt;&lt;&lt;NULL</span>&gt;&gt;&gt;</span><br></pre></td></tr></table></figure>
+
+<p>阅读AST的过程与阅读源程序是很类似的，注释中标明了很多源代码上不那么明显可见的语义（semantic）。例如，你可以直接读出，第3行的x是作为foo(…)函数的参数传入的，而第4行的y是一个在第2行声明的局部变量。</p>
+<p>不过，在构造AST的过程中，编译器并不会试图理解或建模程序究竟在做什么。它不会构建不同分支选择所导致的不同的程序路径，更不会去试图预测不同的分支会发生什么。</p>
+<p>基于AST能做的最好的事情莫过于检测不想要的代码模式（code pattern）。例如，可能我们在某个项目中不允许C风格的强制类型转换。那么我们就可以在语法树上所有的C风格强制类型转换节点上报警。更复杂一点的例子，比如“要求所有函数的返回值都应当进行检验”。</p>
+<p>在CSA的默认发行版中，<code>security.InsecureAPI</code>分类中的许多checker都是AST checker的好例子。</p>
+<p>不过，如果你想要检查点复杂的情况，AST checker的能力没有那么强。比如说在检查除零时，它可以检查出<code>y = x / 0;</code> 但很难查出<code>z=0; ...y = x/z;</code> 这种时候，就需要一些更强力的工具了。</p>
+<h4 id="2-2-控制流图（Control-Flow-Graph）"><a href="#2-2-控制流图（Control-Flow-Graph）" class="headerlink" title="2.2 控制流图（Control Flow Graph）"></a>2.2 控制流图（Control Flow Graph）</h4><p>控制流图使用图来表示程序执行中所有可能经过的路径。CFG 是为每个函数体单独构造的，每一个节点代表一个内部不包含任何分支的基本语句块（这意味着其中是顺序执行的）。每个基本块以“终结语句”结束，“终结语句”要么是一个分支语句，要么是函数的return。这个基本块的出边会连到根据“终结语句”的条件判断可达的其它基本语句块。</p>
+<p>CSA中有一个简单的输出CFG的方法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$clang</span> -cc1 -analyze -analyzer-checker=debug.DumpCFG test.c</span><br></pre></td></tr></table></figure>
+
+
+
+<p>或者（需要Graphviz，生成dot图，且需要DEBUG的clang）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$./bin/clang  -cc1 -analyze -analyzer-checker=debug.ViewCFG -analyzer-viz-egraph-graphviz test.C</span><br><span class="line"><span class="variable">$dot</span> xxxx.dot -Tpng -o test.png</span><br></pre></td></tr></table></figure>
+
+
+
+<p>这里是源码意义上的CFG。如果想要查看中间码的CFG，可以：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$clang</span> -S -emit-llvm test.c -o test.bc</span><br><span class="line"><span class="variable">$opt</span> -view-cfg test.bc</span><br><span class="line"><span class="variable">$dot</span> xxxx.dot -Tpng -o test.png</span><br></pre></td></tr></table></figure>
+
+
+
+<p>基于CFG的分析有利于创建旨在做安全检查的checker，尤其是那些需要考虑程序所有的可能路径的。举例来说，如果你想要确保某个特定的分支条件永远算出来是<code>false</code>，使得其下的某些代码是不可达的，那么你将不得不接触这个条件中的每一个变量的定义——这时候，CFG就恰是你所需要的。</p>
+<p>CFG可以很容易从AST构建。但是，基于CFG的分析通常不是很容易实现，因为CFG并不提供实时的数据流分析。为了达到这个目的，需要写额外的代码。Clang框架本身提供了一些“开箱即用”的基于CFG的checker，例如<code>LivenessAnalysis</code> （这也是CSA内存模型中的关键一点）。</p>
+<p>在CSA的默认发行版中，<code>deadcode.DeadStores</code>是一个很好的基于CFG的checker的例子。</p>
+<p>有时候，基于CFG的分析会和path-sensitive的分析组合使用：用path-sensitive的部分来检查潜在的缺陷位置，再用基于CFG的启发式算法来检查相连的其他路径以提高真阳性率（True Positive Rate）。<code>deadcode.UnreachableCode</code>就是一个结合path-sensitive和CFG的很好例子。</p>
+<p>但是，细心的读者会在foo()函数的CFG中迅速发现一个缺陷：CFG无法显示分支条件的相关性。实际上<code>x==0</code>和<code>!x</code>的真值是相同的，故而两个分支条件注定同真或同假，所以从程序开始达到结尾实际上只存在两条路径：</p>
+<ul>
+<li>要么<code>x==0</code>，串行执行整个代码给y、z赋值。</li>
+<li>要么<code>x!=0</code>，直接跳转到结尾。</li>
+</ul>
+<h4 id="2-3-爆炸图（Exploded-Graph）"><a href="#2-3-爆炸图（Exploded-Graph）" class="headerlink" title="2.3 爆炸图（Exploded Graph）"></a>2.3 爆炸图（Exploded Graph）</h4><p>CSA的爆炸图是path-sensitive分析器引擎的基础数据结构。分析器核心试图“解释”程序代码，并分别处理通过CFG的所有不同路径（即使它们通过相同的语句或基本语句块），因此叫作“爆炸”（explode）。 爆炸图包含所有由分析器引擎探索过的路径，并保有每个语句中每个路径上的程序状态的信息。图中的每个点（我们称作“爆炸点”），是一个二元组：<code>（程序当前状态，当前被分析的程序节点）</code>。</p>
+<p>你可以这样使用这个checker来查看爆炸图：</p>
+<p><code>clang -cc1 -analyze -analyzer-checker=debug.ViewExplodedGraph test.c</code></p>
+<p>实际上，爆炸图通常很大很大，例如<code>foo()</code>产生的爆炸图会有超过50个节点。当到达一个CFG中的终结符时，比如一个if语句，因为不确定条件判断的结果，所以并不知道会走向哪条分支。在爆炸图中，就会兵分两路，在每条路上，都假定进入该条路的条件成立。例如<code>if(x)</code>中，<code>then-branch</code>的条件是<code>x ∈ [0,0]</code>，而<code>else-branch</code>的条件是<code> x ∈ [INT_MIN,-1] ∪ [1, INT_MAX]</code>。这个条件会被收集起来，直到这个符号达到生命周期的尽头。</p>
+<p>例如，在已经收集了<code>x==0</code>条件的前提下，<code>!x</code>的真值是可判定的，而不再是一个未定值。而此时关于<code>y</code>的信息则因为y已经到达生命周期的尽头而不再存储。</p>
+<p>爆炸图中存储了详尽的信息，包含分析器核心对程序执行所能做出的”最佳假设”。 此外，与基于AST和CFG的分析不同，path-sensitive的CSA checker很少被动地读取爆炸图，而是积极地参与其构建，添加自己的节点、绑定(binding)、假设、作特定于检查器的标记，并根据自己的意愿在分解图中分隔路径。</p>
+<h4 id="2-4-延伸阅读"><a href="#2-4-延伸阅读" class="headerlink" title="2.4 延伸阅读"></a>2.4 延伸阅读</h4><p>关于AST：<a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/IntroductionToTheClangAST.html">https://clang.llvm.org/docs/IntroductionToTheClangAST.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/25/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B03/" rel="prev" title="clang 源码导读 笔记(3)">
+      <i class="fa fa-chevron-left"></i> clang 源码导读 笔记(3)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/25/CSA%20Guide%20CN%20CH3/" rel="next" title="Clang Static Analyzer · Checker Developer's Guide [CN] (3)">
+      Clang Static Analyzer · Checker Developer's Guide [CN] (3) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#CH2-checker%E7%9A%84%E5%88%86%E7%B1%BB-lt-gt-%E7%A8%8B%E5%BA%8F%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95"><span class="nav-number">1.</span> <span class="nav-text">CH2 checker的分类 &lt;-&gt; 程序的表示方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E6%8A%BD%E8%B1%A1%E8%AF%AD%E6%B3%95%E6%A0%91%EF%BC%88Abstract-Syntax-Tree%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">2.1 抽象语法树（Abstract Syntax Tree）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E6%8E%A7%E5%88%B6%E6%B5%81%E5%9B%BE%EF%BC%88Control-Flow-Graph%EF%BC%89"><span class="nav-number">1.2.</span> <span class="nav-text">2.2 控制流图（Control Flow Graph）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-%E7%88%86%E7%82%B8%E5%9B%BE%EF%BC%88Exploded-Graph%EF%BC%89"><span class="nav-number">1.3.</span> <span class="nav-text">2.3 爆炸图（Exploded Graph）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">1.4.</span> <span class="nav-text">2.4 延伸阅读</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Asp"
+      src="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+  <p class="site-author-name" itemprop="name">Asp</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Asp</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
