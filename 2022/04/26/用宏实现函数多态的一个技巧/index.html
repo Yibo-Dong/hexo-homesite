@@ -28,7 +28,7 @@
 <meta property="og:description" content="在之前的工作中，遇到了这样的问题： diagnostic engine 限定了location必须valid，否则assertion会出错。 由于diagnostic engine对于信息的处理函数并非void类型，并不能通过 1if (loc.invalid()) return;  来回避。 所以需要在源头上控制有效性。也即，在diag()之前先检查有效： 123456&#x2F;&#x2F; in Preproc">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2022-04-26T03:07:00.000Z">
-<meta property="article:modified_time" content="2022-04-26T03:40:08.865Z">
+<meta property="article:modified_time" content="2022-04-26T05:16:04.924Z">
 <meta property="article:author" content="Asp">
 <meta name="twitter:card" content="summary">
 
@@ -190,7 +190,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-04-26 11:07:00 / Modified: 11:40:08" itemprop="dateCreated datePublished" datetime="2022-04-26T11:07:00+08:00">2022-04-26</time>
+              <time title="Created: 2022-04-26 11:07:00 / Modified: 13:16:04" itemprop="dateCreated datePublished" datetime="2022-04-26T11:07:00+08:00">2022-04-26</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -220,25 +220,19 @@
 
 <p>来回避。</p>
 <p>所以需要在源头上控制有效性。也即，在<code>diag()</code>之前先检查有效：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// in Preprocessing</span></span><br><span class="line"><span class="keyword">if</span>(loc.<span class="built_in">valid</span>())</span><br><span class="line">	<span class="built_in">diag</span>(loc,msg);</span><br><span class="line"><span class="comment">// in AST</span></span><br><span class="line"><span class="keyword">if</span>(loc.<span class="built_in">valid</span>())</span><br><span class="line">    checker-&gt;<span class="built_in">diag</span>(loc,msg);</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// in Preprocessing</span><br><span class="line">if(loc.valid())</span><br><span class="line">	diag(loc,msg);</span><br><span class="line">// in AST</span><br><span class="line">if(loc.valid())</span><br><span class="line">    checker-&gt;diag(loc,msg);</span><br></pre></td></tr></table></figure>
 
 <p>但在非发布环境中，是不希望直接掩盖掉invalid信息的。所以设计了一个宏来控制是否做location verification，不过和这里没有关系，不做展开。</p>
 <p>这时候，一种自然的想法是：如何把这两个函数统一起来？</p>
 <p>实质上，它们唯一的区别在于有没有checker，考虑到每一个checker可能具有不同的类型，这里计划直接使用宏来处理（当然，写一个模板也是没有问题的）。</p>
 <p>所以说，两个<code>diag</code>函数形如：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DIAG_TWO_PARM(loc, mes)  <span class="keyword">if</span> (loc.isValid()) diag(loc, mes)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> DIAG_THREE_PARM(checker, loc, mes) <span class="keyword">if</span> (loc.isValid()) checker-&gt;diag(loc, mes)</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DIAG_TWO_PARM(loc, mes)  <span class="keyword">if</span> (loc.isValid()) diag(loc, mes)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> DIAG_THREE_PARM(checker, loc, mes) <span class="keyword">if</span> (loc.isValid()) checker-&gt;diag(loc, mes)</span></span><br></pre></td></tr></table></figure>
 
 <p>应该如何统一呢？</p>
 <p>这里使用了宏的变参函数来实现：</p>
 <p><code>__VA__ARGS</code>即为宏函数中所传入的参数。而我们只需要让<code>n(每个宏函数在函数列表中所处的位置) + n(argc) == const</code> 就可以了。</p>
 <p>具体来说，实现如下：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> GET_4TH_PARM(_1,_2,_3,func,...) func</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CHECK_B4_DIAG(...) GET_4TH_PARM(__VA_ARGS__, DIAG_THREE_PARM, DIAG_TWO_PARM, ...)(__VA_ARGS__)</span></span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
 
 
     </div>
@@ -258,7 +252,10 @@
     <a href="/2022/04/25/CSA%20Guide%20CN%20CH3/" rel="prev" title="Clang Static Analyzer · Checker Developer's Guide [CN] (3)">
       <i class="fa fa-chevron-left"></i> Clang Static Analyzer · Checker Developer's Guide [CN] (3)
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/26/%E5%85%B3%E4%BA%8E%E6%A0%87%E7%AD%BE%E5%88%86%E5%8F%91%E7%9A%84%E4%B8%80%E7%82%B9%E8%AE%B0%E5%BD%95/" rel="next" title="关于标签分发的一点记录">
+      关于标签分发的一点记录 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -332,7 +329,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-count">17</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

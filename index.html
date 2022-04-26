@@ -161,6 +161,97 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/26/%E5%85%B3%E4%BA%8E%E6%A0%87%E7%AD%BE%E5%88%86%E5%8F%91%E7%9A%84%E4%B8%80%E7%82%B9%E8%AE%B0%E5%BD%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/04/26/%E5%85%B3%E4%BA%8E%E6%A0%87%E7%AD%BE%E5%88%86%E5%8F%91%E7%9A%84%E4%B8%80%E7%82%B9%E8%AE%B0%E5%BD%95/" class="post-title-link" itemprop="url">关于标签分发的一点记录</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-26 12:47:00 / Modified: 13:12:46" itemprop="dateCreated datePublished" datetime="2022-04-26T12:47:00+08:00">2022-04-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/working-notes/" itemprop="url" rel="index"><span itemprop="name">working notes</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>工作的时候，听同事提到了“使用类模板偏特化来进行标签分发”的设计思路。虽然在前面设计chiron的插桩方法时，已经实际使用过“标签分发”的想法，但当时只是灵机一动，此时才知道有这样一种概念。因而做一些记录。</p>
+<p>本文参考了这篇<a target="_blank" rel="noopener" href="https://www.fluentcpp.com/2018/04/27/tag-dispatching/">blog</a></p>
+<h4 id="什么是标签分发（tag-dispatching）"><a href="#什么是标签分发（tag-dispatching）" class="headerlink" title="什么是标签分发（tag dispatching）"></a>什么是标签分发（tag dispatching）</h4><p>在C++中，多态允许同一函数名具有不同的参数类型列表从而形成多态。但相同的参数类型列表是不被允许的。例如：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="type">int</span> a, <span class="type">float</span> b)</span> </span>&#123; cout &lt;&lt; <span class="number">1</span>; &#125;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123; cout &lt;&lt; <span class="number">2</span>; &#125; <span class="comment">// ok. polymorphism</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123; cout &lt;&lt; <span class="number">3</span>; &#125; <span class="comment">// no. redefinition</span></span><br></pre></td></tr></table></figure>
+
+<p>如何解决同样的参数，不同的行为呢？</p>
+<p>可以使用标签分发机制，也即定义不同的类型，用以描述该函数所进行的行为类型：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">tag1</span> &#123;&#125;;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">tag2</span> &#123;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, tag1 x )</span> </span>&#123; cout &lt;&lt; <span class="number">2</span>; &#125; <span class="comment">// ok. polymorphism</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, tag2 x )</span> </span>&#123; cout &lt;&lt; <span class="number">3</span>; &#125; <span class="comment">// ok. polymorphism</span></span><br></pre></td></tr></table></figure>
+
+<p>不过需要注意的是：如果是无参数的，那么标签就形成了唯一的参数。如果用在构造函数中，需要注意避免歧义：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyClass</span>&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">constructThisWay</span>&#123;&#125;;</span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">constructThatWay</span>&#123;&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">MyClass</span><span class="params">(constructThisWay)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">MyClass</span><span class="params">(constructThatWay)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">MyClass <span class="title">x</span><span class="params">((MyClass::constructThisWay()))</span></span>; <span class="comment">// MyClass x</span></span><br><span class="line"><span class="function">MyClass <span class="title">y</span><span class="params">(MyClass::constructThisWay())</span></span>;   <span class="comment">// MyClass y(MyClass::constructThisWay (*)()). viewed as a function declaration, taking a function-pointer as parm.</span></span><br><span class="line"><span class="function">MyClass <span class="title">z</span><span class="params">(MyClass::constructThisWay&#123;&#125;)</span></span>; <span class="comment">// uniform initialization.</span></span><br></pre></td></tr></table></figure>
+
+<p>这一点可以通过使用static constructor 或者 uniform initialization 来避免：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyClass</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="type">static</span> <span class="keyword">struct</span> <span class="title class_">ConstructThisWay</span>&#123;&#125; constructThisWay;</span><br><span class="line">    <span class="type">static</span> <span class="keyword">struct</span> <span class="title class_">ConstructThatWay</span>&#123;&#125; constructThatWay;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">MyClass</span>();</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">MyClass</span><span class="params">(ConstructThisWay)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">MyClass</span><span class="params">(ConstructThatWay)</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function">MyClass <span class="title">x</span><span class="params">(MyClass::constructThatWay)</span></span>; <span class="comment">// no more a type, but a tag object.</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="何时使用标签分发"><a href="#何时使用标签分发" class="headerlink" title="何时使用标签分发"></a>何时使用标签分发</h4><p>原文提出了这样一种观点，我认可他的观点：</p>
+<blockquote>
+<p>使用标签分发来给“行为”附魔，而不要给“数据”附魔。</p>
+</blockquote>
+<p>例如，即使是同样类型，但是传入的数据含义并不相同，不应该使用标签分发：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">CircleBad</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">buildWithRadius</span>&#123;&#125;;</span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">buildWithDiameter</span>&#123;&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">CircleBad</span><span class="params">(<span class="type">double</span> radius, buildWithRadius)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">CircleBad</span><span class="params">(<span class="type">double</span> diameter, buildWithDiameter)</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CircleGood</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">CircleGood</span><span class="params">(Radius radius)</span></span>; <span class="comment">// different types.</span></span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">CircleGood</span><span class="params">(Diameter diameter)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/26/%E7%94%A8%E5%AE%8F%E5%AE%9E%E7%8E%B0%E5%87%BD%E6%95%B0%E5%A4%9A%E6%80%81%E7%9A%84%E4%B8%80%E4%B8%AA%E6%8A%80%E5%B7%A7/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -186,7 +277,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-04-26 11:07:00 / Modified: 11:40:08" itemprop="dateCreated datePublished" datetime="2022-04-26T11:07:00+08:00">2022-04-26</time>
+              <time title="Created: 2022-04-26 11:07:00 / Modified: 13:16:04" itemprop="dateCreated datePublished" datetime="2022-04-26T11:07:00+08:00">2022-04-26</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -216,25 +307,19 @@
 
 <p>来回避。</p>
 <p>所以需要在源头上控制有效性。也即，在<code>diag()</code>之前先检查有效：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// in Preprocessing</span></span><br><span class="line"><span class="keyword">if</span>(loc.<span class="built_in">valid</span>())</span><br><span class="line">	<span class="built_in">diag</span>(loc,msg);</span><br><span class="line"><span class="comment">// in AST</span></span><br><span class="line"><span class="keyword">if</span>(loc.<span class="built_in">valid</span>())</span><br><span class="line">    checker-&gt;<span class="built_in">diag</span>(loc,msg);</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// in Preprocessing</span><br><span class="line">if(loc.valid())</span><br><span class="line">	diag(loc,msg);</span><br><span class="line">// in AST</span><br><span class="line">if(loc.valid())</span><br><span class="line">    checker-&gt;diag(loc,msg);</span><br></pre></td></tr></table></figure>
 
 <p>但在非发布环境中，是不希望直接掩盖掉invalid信息的。所以设计了一个宏来控制是否做location verification，不过和这里没有关系，不做展开。</p>
 <p>这时候，一种自然的想法是：如何把这两个函数统一起来？</p>
 <p>实质上，它们唯一的区别在于有没有checker，考虑到每一个checker可能具有不同的类型，这里计划直接使用宏来处理（当然，写一个模板也是没有问题的）。</p>
 <p>所以说，两个<code>diag</code>函数形如：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DIAG_TWO_PARM(loc, mes)  <span class="keyword">if</span> (loc.isValid()) diag(loc, mes)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> DIAG_THREE_PARM(checker, loc, mes) <span class="keyword">if</span> (loc.isValid()) checker-&gt;diag(loc, mes)</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DIAG_TWO_PARM(loc, mes)  <span class="keyword">if</span> (loc.isValid()) diag(loc, mes)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> DIAG_THREE_PARM(checker, loc, mes) <span class="keyword">if</span> (loc.isValid()) checker-&gt;diag(loc, mes)</span></span><br></pre></td></tr></table></figure>
 
 <p>应该如何统一呢？</p>
 <p>这里使用了宏的变参函数来实现：</p>
 <p><code>__VA__ARGS</code>即为宏函数中所传入的参数。而我们只需要让<code>n(每个宏函数在函数列表中所处的位置) + n(argc) == const</code> 就可以了。</p>
 <p>具体来说，实现如下：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> GET_4TH_PARM(_1,_2,_3,func,...) func</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CHECK_B4_DIAG(...) GET_4TH_PARM(__VA_ARGS__, DIAG_THREE_PARM, DIAG_TWO_PARM, ...)(__VA_ARGS__)</span></span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
 
 
       
@@ -1211,90 +1296,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/12/14/Decay&Array-Pointer%20conversion/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
-      <meta itemprop="name" content="Asp">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/14/Decay&Array-Pointer%20conversion/" class="post-title-link" itemprop="url">Decay & Array<->Pointer conversion</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-12-14 17:00:00" itemprop="dateCreated datePublished" datetime="2021-12-14T17:00:00+08:00">2021-12-14</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-04-25 18:06:09" itemprop="dateModified" datetime="2022-04-25T18:06:09+08:00">2022-04-25</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/working-notes/" itemprop="url" rel="index"><span itemprop="name">working notes</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="Decay-amp-Array-lt-gt-Pointer-conversion"><a href="#Decay-amp-Array-lt-gt-Pointer-conversion" class="headerlink" title="Decay&amp;Array&lt;-&gt;Pointer conversion"></a>Decay&amp;Array&lt;-&gt;Pointer conversion</h2><p>when calling functions in C++, arguments need to undergo type conversions.</p>
-<p>for those parameters passed-by-value, some of the conversion rules are called <code>decay</code>, because in most cases, some type information is lost.</p>
-<h3 id="Examples"><a href="#Examples" class="headerlink" title="Examples"></a>Examples</h3><h4 id="Qualifier-Lost-Decay"><a href="#Qualifier-Lost-Decay" class="headerlink" title="Qualifier Lost Decay"></a>Qualifier Lost Decay</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">func</span>(<span class="type">int</span> a);</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> t = <span class="number">1</span>; <span class="comment">// &#x27;volatile&#x27; also.</span></span><br><span class="line">	<span class="built_in">func</span>(t); <span class="comment">// here, the const qualifier is left alone.</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="Array-to-Pointer-Decay"><a href="#Array-to-Pointer-Decay" class="headerlink" title="Array-to-Pointer Decay"></a>Array-to-Pointer Decay</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">print_size</span><span class="params">(<span class="type">char</span> arr[<span class="number">64</span>])</span></span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d&quot;</span>,<span class="built_in">sizeof</span>(arr));</span><br><span class="line">    <span class="comment">// 8</span></span><br><span class="line">    <span class="comment">// the same as sizeof(char*).</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/* because from compiler&#x27;s perspective, arrays cannot be passed by value</span></span><br><span class="line"><span class="comment"> * this function is the same as &quot;void print_size(char*)&quot;</span></span><br><span class="line"><span class="comment"> */</span> </span><br></pre></td></tr></table></figure>
-
-<h4 id="Function-to-Pointer-Decay"><a href="#Function-to-Pointer-Decay" class="headerlink" title="Function-to-Pointer Decay"></a>Function-to-Pointer Decay</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">call</span><span class="params">(<span class="type">void</span> callback(<span class="type">int</span>), <span class="type">int</span> x)</span> </span>&#123;&#125;</span><br><span class="line"><span class="comment">/* the same as</span></span><br><span class="line"><span class="comment"> * void call(void (*callback)(int), int x) &#123;&#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="Explicit-Usage"><a href="#Explicit-Usage" class="headerlink" title="Explicit Usage"></a>Explicit Usage</h3><p>in <code>std::decay</code> .</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1366,7 +1367,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-count">17</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
