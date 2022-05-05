@@ -161,6 +161,270 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/05/Effective-Modern-C++-(1)/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/05/05/Effective-Modern-C++-(1)/" class="post-title-link" itemprop="url">Effective Modern C++ (2)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-05-05 19:00:00 / Modified: 19:54:17" itemprop="dateCreated datePublished" datetime="2022-05-05T19:00:00+08:00">2022-05-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Effective-Modern-C/" itemprop="url" rel="index"><span itemprop="name">Effective Modern C++</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Effective-Modern-C-2-Auto"><a href="#Effective-Modern-C-2-Auto" class="headerlink" title="Effective Modern C++ (2) Auto"></a>Effective Modern C++ (2) Auto</h2><h3 id="Brief"><a href="#Brief" class="headerlink" title="Brief"></a>Brief</h3><p>This chapter talks about ‘auto’. This keyword is supported from C++11, and is very convenient at most times. However, in some occasions, its behavior may seem just ‘wrong’ to programmers. This chapter has two items, introducing us to auto’s ins and outs.</p>
+<h3 id="Item-5-Prefer-auto-to-explicit-type-declarations"><a href="#Item-5-Prefer-auto-to-explicit-type-declarations" class="headerlink" title="Item 5 Prefer auto to explicit type declarations."></a>Item 5 Prefer auto to explicit type declarations.</h3><h5 id="Why-auto-is-good"><a href="#Why-auto-is-good" class="headerlink" title="Why auto is good:"></a>Why <code>auto</code> is good:</h5><ul>
+<li>write less</li>
+<li>when it comes to holding a closure, it uses as much memory as the closure requires. <ul>
+<li><code>std::function</code>, on the contrary, has a fixed size for any given signature, and thus may yield out-of-memory exceptions.</li>
+</ul>
+</li>
+<li>can help reduce uninitialized problems</li>
+<li>can be cross-platform.<ul>
+<li>e.g. <code>std::vector&lt;int&gt;::size_type</code> becomes 64 bits on 64-bit Windows, while<code>unsigned</code> is still 32 bits.</li>
+</ul>
+</li>
+<li>avoid const-missing in for-range and so on.<ul>
+<li>e.g. key part of unordered_map in const. If you write something without a const qualification, it will be copied every time.</li>
+</ul>
+</li>
+<li>enhance readability.</li>
+</ul>
+<h5 id="Why-auto-is-not-perfect"><a href="#Why-auto-is-not-perfect" class="headerlink" title="Why auto is not perfect:"></a>Why <code>auto</code> is not perfect:</h5><ul>
+<li>the deduced type may be “strange” <ul>
+<li>e.g. <code>std::initial_list</code></li>
+</ul>
+</li>
+<li>Seen in Item 6</li>
+</ul>
+<h5 id="other-notes"><a href="#other-notes" class="headerlink" title="other notes:"></a>other notes:</h5><ul>
+<li><code>std::function</code> objects can refer to any callable object, i.e. , to anything that can be invoked like a function.</li>
+</ul>
+<h3 id="Item-6-Use-the-explicitly-typed-initializer-idiom-when-auto-deduces-undesired-types"><a href="#Item-6-Use-the-explicitly-typed-initializer-idiom-when-auto-deduces-undesired-types" class="headerlink" title="Item 6 Use the explicitly typed initializer idiom when auto deduces undesired types."></a>Item 6 Use the explicitly typed initializer idiom when <code>auto</code> deduces undesired types.</h3><h5 id="When-auto-zig-zag"><a href="#When-auto-zig-zag" class="headerlink" title="When auto zig-zag:"></a>When <code>auto</code> zig-zag:</h5><ul>
+<li><p>lack of the implicit cast</p>
+<ul>
+<li><code>std::vector&lt;bool&gt;[1]</code>, without <code>bool</code> specified, turns out to be dangling pointers(pointing to temporary objects) on some implementations.</li>
+</ul>
+</li>
+<li><p>invisible proxy class</p>
+<ul>
+<li><p>just like <code>std::vector::reference</code>,</p>
+</li>
+<li><p>Expression templates</p>
+<ul>
+<li>as to numerical operations, if operators returns a proxy for the result instead of the result itself, it would be faster.</li>
+</ul>
+</li>
+<li><p>they are not designed to live longer than a single statement.</p>
+</li>
+<li><p>should avoid:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> somevar = expression of invisible proxy <span class="keyword">class</span> types.</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>how to avoid: </p>
+<ul>
+<li>static_cast&lt;&gt;</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Other notes:</p>
+<ul>
+<li><code>std::vector&lt;bool&gt;</code> is specified to represent its bools in packed form, one bit per bool.</li>
+<li>C++ forbids reference to bits.</li>
+<li>how to find invisible proxy class:<ul>
+<li>function signatures will reflect them: operator returning a reference.</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/05/Effective-Modern-C++-(2)/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/05/05/Effective-Modern-C++-(2)/" class="post-title-link" itemprop="url">Effective Modern C++ (2)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-05-05 19:00:00 / Modified: 19:54:42" itemprop="dateCreated datePublished" datetime="2022-05-05T19:00:00+08:00">2022-05-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Effective-Modern-C/" itemprop="url" rel="index"><span itemprop="name">Effective Modern C++</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Effective-Modern-C-2-Auto"><a href="#Effective-Modern-C-2-Auto" class="headerlink" title="Effective Modern C++ (2) Auto"></a>Effective Modern C++ (2) Auto</h2><h3 id="Brief"><a href="#Brief" class="headerlink" title="Brief"></a>Brief</h3><p>This chapter talks about ‘auto’. This keyword is supported from C++11, and is very convenient at most times. However, in some occasions, its behavior may seem just ‘wrong’ to programmers. This chapter has two items, introducing us to auto’s ins and outs.</p>
+<h3 id="Item-5-Prefer-auto-to-explicit-type-declarations"><a href="#Item-5-Prefer-auto-to-explicit-type-declarations" class="headerlink" title="Item 5 Prefer auto to explicit type declarations."></a>Item 5 Prefer auto to explicit type declarations.</h3><h5 id="Why-auto-is-good"><a href="#Why-auto-is-good" class="headerlink" title="Why auto is good:"></a>Why <code>auto</code> is good:</h5><ul>
+<li>write less</li>
+<li>when it comes to holding a closure, it uses as much memory as the closure requires. <ul>
+<li><code>std::function</code>, on the contrary, has a fixed size for any given signature, and thus may yield out-of-memory exceptions.</li>
+</ul>
+</li>
+<li>can help reduce uninitialized problems</li>
+<li>can be cross-platform.<ul>
+<li>e.g. <code>std::vector&lt;int&gt;::size_type</code> becomes 64 bits on 64-bit Windows, while<code>unsigned</code> is still 32 bits.</li>
+</ul>
+</li>
+<li>avoid const-missing in for-range and so on.<ul>
+<li>e.g. key part of unordered_map in const. If you write something without a const qualification, it will be copied every time.</li>
+</ul>
+</li>
+<li>enhance readability.</li>
+</ul>
+<h5 id="Why-auto-is-not-perfect"><a href="#Why-auto-is-not-perfect" class="headerlink" title="Why auto is not perfect:"></a>Why <code>auto</code> is not perfect:</h5><ul>
+<li>the deduced type may be “strange” <ul>
+<li>e.g. <code>std::initial_list</code></li>
+</ul>
+</li>
+<li>Seen in Item 6</li>
+</ul>
+<h5 id="other-notes"><a href="#other-notes" class="headerlink" title="other notes:"></a>other notes:</h5><ul>
+<li><code>std::function</code> objects can refer to any callable object, i.e. , to anything that can be invoked like a function.</li>
+</ul>
+<h3 id="Item-6-Use-the-explicitly-typed-initializer-idiom-when-auto-deduces-undesired-types"><a href="#Item-6-Use-the-explicitly-typed-initializer-idiom-when-auto-deduces-undesired-types" class="headerlink" title="Item 6 Use the explicitly typed initializer idiom when auto deduces undesired types."></a>Item 6 Use the explicitly typed initializer idiom when <code>auto</code> deduces undesired types.</h3><h5 id="When-auto-zig-zag"><a href="#When-auto-zig-zag" class="headerlink" title="When auto zig-zag:"></a>When <code>auto</code> zig-zag:</h5><ul>
+<li><p>lack of the implicit cast</p>
+<ul>
+<li><code>std::vector&lt;bool&gt;[1]</code>, without <code>bool</code> specified, turns out to be dangling pointers(pointing to temporary objects) on some implementations.</li>
+</ul>
+</li>
+<li><p>invisible proxy class</p>
+<ul>
+<li><p>just like <code>std::vector::reference</code>,</p>
+</li>
+<li><p>Expression templates</p>
+<ul>
+<li>as to numerical operations, if operators returns a proxy for the result instead of the result itself, it would be faster.</li>
+</ul>
+</li>
+<li><p>they are not designed to live longer than a single statement.</p>
+</li>
+<li><p>should avoid:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> somevar = expression of invisible proxy <span class="keyword">class</span> types.</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>how to avoid: </p>
+<ul>
+<li>static_cast&lt;&gt;</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Other notes:</p>
+<ul>
+<li><code>std::vector&lt;bool&gt;</code> is specified to represent its bools in packed form, one bit per bool.</li>
+<li>C++ forbids reference to bits.</li>
+<li>how to find invisible proxy class:<ul>
+<li>function signatures will reflect them: operator returning a reference.</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/26/%E5%85%B3%E4%BA%8E%E6%A0%87%E7%AD%BE%E5%88%86%E5%8F%91%E7%9A%84%E4%B8%80%E7%82%B9%E8%AE%B0%E5%BD%95/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -363,10 +627,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-04-25 19:00:00 / Modified: 18:09:56" itemprop="dateCreated datePublished" datetime="2022-04-25T19:00:00+08:00">2022-04-25</time>
+              <time title="Created: 2022-04-25 19:00:00" itemprop="dateCreated datePublished" datetime="2022-04-25T19:00:00+08:00">2022-04-25</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-04-26 14:37:53" itemprop="dateModified" datetime="2022-04-26T14:37:53+08:00">2022-04-26</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -392,7 +662,7 @@
 <p>这一章我们会讨论基于AST检查的两种路线：<code>AST visitor</code> 和<code>AST matcher</code>。一般来说这两个有一个就够用了，不过有时候也许你会在同一个checker里同时用这两个。</p>
 <p>需要说明的是，基于AST的checker并不是CSA的强项所在，尽管CSA里确实有那么几个基于AST的checker。如果你只需要AST的信息，更合适的工具也许是<code>clang-tidy</code>。</p>
 <p>不过换个角度说，在path-sensitive引擎中，带着用到基于AST的checker是很正常的。那么更多地了解path-sensitive所订阅的事件背后的语法也是很有必要的。于是，这一章我们会学习如何写只用AST的checker，不过相关的技术其实也可以迁移到path-sensitive checker中去，所以掌握它们其实很有用。</p>
-<h4 id="3-1-非路径敏感checker的回调函数"><a href="#3-1-非路径敏感checker的回调函数" class="headerlink" title="3.1 非路径敏感checker的回调函数"></a>3.1 非路径敏感checker的回调函数</h4><p>正如前面提到过的，如果一个path-sensitive checker都没有，path-sensitive引擎是不会启动的，速度会快很多。同样，因为引擎没有启动，而很多数据结构都不会被建立。因而，能用的回调函数接口并不是很多。能用的里面，比较有用的两个分别是<code>check::EndOfTranslationUnit</code> 和 <code>check::ASTCode Body</code>。</p>
+<h4 id="3-1-非路径敏感checker的回调函数"><a href="#3-1-非路径敏感checker的回调函数" class="headerlink" title="3.1 非路径敏感checker的回调函数"></a>3.1 非路径敏感checker的回调函数</h4><p>正如前面提到过的，如果一个path-sensitive checker都没有，path-sensitive引擎是不会启动的，速度会快很多。同样，因为引擎没有启动，而很多数据结构都不会被建立。因而，能用的回调函数接口并不是很多。能用的里面，比较有用的两个分别是<code>check::EndOfTranslationUnit</code> 和 <code>check::ASTCodeBody</code>。</p>
 <h5 id="3-1-1-check-EndOfTranslationUnit"><a href="#3-1-1-check-EndOfTranslationUnit" class="headerlink" title="3.1.1 check::EndOfTranslationUnit"></a>3.1.1 check::EndOfTranslationUnit</h5><p>原型为： <code>void checkEndOfTranslationUnit(const TranslationUnitDecl *TU, AnalysisManager &amp;AM, BugReporter &amp;BR) const</code>;</p>
 <p>在这个回调函数中，程序的整个AST是可以拿到的。</p>
 <p>访问整个AST的入口，也就是整个翻译单元（Translation Unit）的声明，是直接以参数形式传入的。</p>
@@ -416,17 +686,17 @@
 </ul>
 <h5 id="3-2-1-实现一个简单的statement-visitor"><a href="#3-2-1-实现一个简单的statement-visitor" class="headerlink" title="3.2.1 实现一个简单的statement visitor"></a>3.2.1 实现一个简单的statement visitor</h5><p>从一个简单的例子开始，我们看看我们能不能使用AST visitor来重写一下<code>MainCallChecker</code>。</p>
 <p>第一步，我们来声明AST visitor。visitor保存有用以抛出报告的<code>BugReporter</code>的引用，以及用于提供位置信息的当前的<code>AnalysisDeclContext</code>。后者包裹起了我们在分析的函数。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">namesapce&#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">WalkAST</span>: <span class="keyword">public</span> ConstStmtVisitor&lt;WalkAST&gt;&#123;</span><br><span class="line">        BugReporter &amp;BR;</span><br><span class="line">        AnalysisDeclContext *ADC;</span><br><span class="line">      </span><br><span class="line">        <span class="function">Void <span class="title">VisitChildren</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="built_in">WalkAST</span>(BugReporter &amp;Reporter, AnalysisDeclContext *Context): <span class="built_in">BR</span>(Reporter), <span class="built_in">ADC</span>(Context) &#123;&#125;</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">VisitStmt</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>;</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">VisitCallExpr</span><span class="params">(<span class="type">const</span> CallExpr *CE)</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span>&#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">WalkAST</span>: <span class="keyword">public</span> ConstStmtVisitor&lt;WalkAST&gt;&#123;</span><br><span class="line">        BugReporter &amp;BR;</span><br><span class="line">        AnalysisDeclContext *ADC;</span><br><span class="line">      </span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">VisitChildren</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="built_in">WalkAST</span>(BugReporter &amp;Reporter, AnalysisDeclContext *Context): <span class="built_in">BR</span>(Reporter), <span class="built_in">ADC</span>(Context) &#123;&#125;</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">VisitStmt</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>;</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">VisitCallExpr</span><span class="params">(<span class="type">const</span> CallExpr *CE)</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>这个visitor定义了两个public的回调函数：<code>VisitCallExpr(...)</code>用于处理函数调用表达式，以及<code>VisitStmt(...)</code>用于处理其它的statement。</p>
 <p>这些回调函数有一个共同点：他们在结束访问自身的statement之后，需要访问子statement。这种操作我们切分到<code>VisitChildren(...)</code>中：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">WalkAST::VisitChildren</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (Stmt::const_child_iterator I = S-&gt;<span class="built_in">child_begin</span>(), E=<span class="built_in">child_end</span>(); I!=E; ++I)</span><br><span class="line">        <span class="keyword">if</span>(<span class="type">const</span> Stmt *Child = *I)</span><br><span class="line">            <span class="built_in">Visit</span>(Child);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">WalkAST::VisitChildren</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (Stmt::const_child_iterator I = S-&gt;<span class="built_in">child_begin</span>(), E=S-&gt;<span class="built_in">child_end</span>(); I!=E; ++I)</span><br><span class="line">        <span class="keyword">if</span>(<span class="type">const</span> Stmt *Child = *I)</span><br><span class="line">            <span class="built_in">Visit</span>(Child);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p> 于是，<code>VisitStmt</code>除了<code>VisitChildren</code>以外不需要做别的了：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">WalkAST::VisitStmt</span><span class="params">(<span class="type">const</span> Stmt *S)</span></span>&#123;</span><br><span class="line">    <span class="built_in">VisitChildren</span>(S);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>大多数checker的逻辑被存在<code>VisitCallExpr(...)</code>中。我们获取当前所调用的函数的标识符，看看它是否恰巧是”main”。如果是，那么我们就抛出一个path-sensitive的report。注意，由于没有可用的<code>CheckerContext</code>包裹，所以需要直接访问<code>BugReporter</code>；而且获取位置信息也有点麻烦。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> WalkAST ::<span class="built_in">VisitCallExpr</span>(<span class="type">const</span> CallExpr *CE) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="type">const</span> FunctionDecl *FD = CE-&gt;<span class="built_in">getDirectCallee</span>())</span><br><span class="line">        <span class="keyword">if</span> (<span class="type">const</span> IdentifierInfo *II = FD-&gt;<span class="built_in">getIdentifier</span>())</span><br><span class="line">            <span class="keyword">if</span> (II-&gt;<span class="built_in">isStr</span>(<span class="string">&quot;main&quot;</span>)) &#123;</span><br><span class="line">                SourceRange R = CE-&gt;<span class="built_in">getSourceRange</span>();</span><br><span class="line">                PathDiagnosticLocation ELoc = PathDiagnosticLocation ::<span class="built_in">createBegin</span>(</span><br><span class="line">                    CE, BR.<span class="built_in">getSourceManager</span>(), ADC);</span><br><span class="line">                BR.<span class="built_in">EmitBasicReport</span>(ADC-&gt;<span class="built_in">getDecl</span>(), <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>,</span><br><span class="line">                                   <span class="string">&quot;Call to main&quot;</span>, ELoc, R);</span><br><span class="line">            &#125;</span><br><span class="line">    <span class="built_in">VisitChildren</span>(CE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> WalkAST ::<span class="built_in">VisitCallExpr</span>(<span class="type">const</span> CallExpr *CE) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="type">const</span> FunctionDecl *FD = CE-&gt;<span class="built_in">getDirectCallee</span>())</span><br><span class="line">        <span class="keyword">if</span> (<span class="type">const</span> IdentifierInfo *II = FD-&gt;<span class="built_in">getIdentifier</span>())</span><br><span class="line">            <span class="keyword">if</span> (II-&gt;<span class="built_in">isStr</span>(<span class="string">&quot;main&quot;</span>)) &#123;</span><br><span class="line">                SourceRange R = CE-&gt;<span class="built_in">getSourceRange</span>();</span><br><span class="line">                PathDiagnosticLocation ELoc = PathDiagnosticLocation ::<span class="built_in">createBegin</span>(</span><br><span class="line">                    CE, BR.<span class="built_in">getSourceManager</span>(), ADC);</span><br><span class="line">                BR.<span class="built_in">EmitBasicReport</span>(ADC-&gt;<span class="built_in">getDecl</span>(), <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>,</span><br><span class="line">                                   <span class="string">&quot;Call to main&quot;</span>, ELoc, R);</span><br><span class="line">            &#125; <span class="comment">// Not working on present version now, need Checkername</span></span><br><span class="line">    <span class="built_in">VisitChildren</span>(CE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>以上就是visitor的实现。现在我们就只需要创建一个，然后给它一些代码来访问。既然“所有代码”是一个declaration而不是一个statement，我们选择订阅<code>check::ASTCodeBody</code>：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">MainCallCheckerAST</span> : <span class="keyword">public</span> Checker&lt;check::ASTCodeBody&gt; &#123;</span><br><span class="line">        <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">checkASTCodeBody</span><span class="params">(<span class="type">const</span> Decl *D, AnalysisManager &amp;AM,</span></span></span><br><span class="line"><span class="params"><span class="function">                              BugReporter &amp;B)</span> <span class="type">const</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125; <span class="comment">// namespace</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> MainCallCheckerAST ::<span class="built_in">checkASTCodeBody</span>(<span class="type">const</span> Decl *D, AnalysisManager &amp;AM,BugReporter &amp;BR) <span class="type">const</span> &#123;</span><br><span class="line">    <span class="function">WalkAST <span class="title">Walker</span><span class="params">(BR, AM.getAnalysisDeclContext(D))</span></span>;</span><br><span class="line">    Walker.<span class="built_in">Visit</span>(D-&gt;<span class="built_in">getBody</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -450,9 +720,9 @@
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Callback</span> : <span class="keyword">public</span> MatchFinder ::MatchCallback &#123;</span><br><span class="line">        BugReporter &amp;BR;</span><br><span class="line">        AnalysisDeclContext *ADC;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">run</span><span class="params">(<span class="type">const</span> MatchFinder ::MatchResult &amp;Result)</span></span>;</span><br><span class="line">        <span class="built_in">Callback</span>(BugReporter &amp;Reporter, AnalysisDeclContext *Context)</span><br><span class="line">            : <span class="built_in">BR</span>(Reporter), <span class="built_in">ADC</span>(Context) &#123;&#125;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125; <span class="comment">// namespace</span></span><br></pre></td></tr></table></figure>
 
 <p>理想情况下，唯一需要做的就是抛出一个错误报告。不过matcher并不能永远写清楚逻辑细节，所以留一些检查工作在回调函数中也是很正常的事。</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">Callback::run</span><span class="params">(<span class="type">const</span> MatchFinder ::MatchResult &amp;Result)</span> </span>&#123;</span><br><span class="line">    <span class="type">const</span> CallExpr *CE = Result.Nodes.<span class="built_in">getStmtAs</span>&lt;CallExpr&gt;(<span class="string">&quot;call&quot;</span>);</span><br><span class="line">    <span class="built_in">assert</span>(CE);</span><br><span class="line">    SourceRange R = CE-&gt;<span class="built_in">getSourceRange</span>();</span><br><span class="line">    PathDiagnosticLocation ELoc =</span><br><span class="line">        PathDiagnosticLocation ::<span class="built_in">createBegin</span>(CE, BR.<span class="built_in">getSourceManager</span>(), ADC);</span><br><span class="line">    BR.<span class="built_in">EmitBasicReport</span>(ADC-&gt;<span class="built_in">getDecl</span>(), <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>,</span><br><span class="line">                       <span class="string">&quot;Call to main&quot;</span>, ELoc, R);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">Callback::run</span><span class="params">(<span class="type">const</span> MatchFinder ::MatchResult &amp;Result)</span> </span>&#123;</span><br><span class="line">    <span class="type">const</span> CallExpr *CE = Result.Nodes.<span class="built_in">getNodeAs</span>&lt;CallExpr&gt;(<span class="string">&quot;call&quot;</span>);</span><br><span class="line">    <span class="built_in">assert</span>(CE);</span><br><span class="line">    SourceRange R = CE-&gt;<span class="built_in">getSourceRange</span>();</span><br><span class="line">    PathDiagnosticLocation ELoc =</span><br><span class="line">        PathDiagnosticLocation ::<span class="built_in">createBegin</span>(CE, BR.<span class="built_in">getSourceManager</span>(), ADC);</span><br><span class="line">    BR.<span class="built_in">EmitBasicReport</span>(ADC-&gt;<span class="built_in">getDecl</span>(), <span class="string">&quot;Call to main&quot;</span>, <span class="string">&quot;Example checker&quot;</span>,</span><br><span class="line">                       <span class="string">&quot;Call to main&quot;</span>, ELoc, R);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>在毁掉函数中，我们拿到了call expression的名字“call”（正是我们在checker）中通过<code>bind()</code>定义的。在matcher中，我们确信这些调用表达式是存在的，所以我们可以进行断言。</p>
+<p>在回调函数中，我们拿到了call expression的名字“call”（正是我们在checker）中通过<code>bind()</code>定义的。在matcher中，我们确信这些调用表达式是存在的，所以我们可以进行断言。</p>
 <p>然后该去定义checker了。这次我们试试整TU的匹配：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> &#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">MainCallCheckerMatchers</span> : <span class="keyword">public</span> Checker&lt;check ::EndOfTranslationUnit&gt; &#123;</span><br><span class="line">        <span class="keyword">public</span>:</span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">checkEndOfTranslationUnit</span><span class="params">(<span class="type">const</span> TranslationUnitDecl *TU, AnalysisManager &amp;AM, BugReporter &amp;B)</span> <span class="type">const</span></span>;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125; <span class="comment">// namespace</span></span><br></pre></td></tr></table></figure>
 
@@ -482,128 +752,6 @@
 <p><a target="_blank" rel="noopener" href="http://clang.llvm.org/doxygen/classclang_1_1Decl.html">http://clang.llvm.org/doxygen/classclang_1_1Decl.html</a></p>
 <p><a target="_blank" rel="noopener" href="http://clang.llvm.org/doxygen/classclang_1_1Type.html">http://clang.llvm.org/doxygen/classclang_1_1Type.html</a></p>
 <h4 id=""><a href="#" class="headerlink" title=""></a></h4>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/25/Effective-Modern-C++-(1)/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
-      <meta itemprop="name" content="Asp">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/04/25/Effective-Modern-C++-(1)/" class="post-title-link" itemprop="url">Effective Modern C++ (1)</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2022-04-25 19:00:00 / Modified: 20:53:34" itemprop="dateCreated datePublished" datetime="2022-04-25T19:00:00+08:00">2022-04-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Effective-Modern-C/" itemprop="url" rel="index"><span itemprop="name">Effective Modern C++</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="Effective-Modern-C-1-Deducing-Types"><a href="#Effective-Modern-C-1-Deducing-Types" class="headerlink" title="Effective Modern C++ (1) Deducing Types"></a>Effective Modern C++ (1) Deducing Types</h2><h3 id="Brief"><a href="#Brief" class="headerlink" title="Brief"></a>Brief</h3><p>Ever since C++11, type deducing has been an important mechanism. <code>mechanism</code> may not be accurate, for the deducing behavior varies in different scene. This chapter introduce the mechanisms in detail from different aspects, separated in different items.</p>
-<h3 id="Item-1-template-type-deduction"><a href="#Item-1-template-type-deduction" class="headerlink" title="Item 1 template type deduction"></a>Item 1 template type deduction</h3><h4 id="Prototype"><a href="#Prototype" class="headerlink" title="Prototype:"></a>Prototype:</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(ParamType param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(expr);</span><br></pre></td></tr></table></figure>
-
-<h3 id=""><a href="#" class="headerlink" title=""></a></h3><h4 id="Mechanism"><a href="#Mechanism" class="headerlink" title="Mechanism:"></a>Mechanism:</h4><ul>
-<li><code>ParamType</code> is a <strong>Reference&#x2F;Pointer</strong>, not universal Reference<ul>
-<li>if <code>expr type</code> is a <strong>reference&#x2F;Pointer</strong>, ignore the reference&#x2F;pointer part.</li>
-<li>then match <code>T</code> against <code>paramtype</code></li>
-</ul>
-</li>
-<li><code>ParamType</code> is a universal Reference<ul>
-<li>if <code>expr</code> is an <strong>lvalue</strong>, <code>T</code> &amp; <code>paramtype</code> down to lvalue references</li>
-<li>if <code>expr</code> is an <strong>rvalue</strong>, apply normal rules.</li>
-</ul>
-</li>
-<li><code>ParamType</code> is neither a pointer nor a reference<ul>
-<li>if expr’s type is a reference, ignore the reference part.</li>
-<li>after that, if <code>expr</code> is const&#x2F;volatile, ignore that. (because here is by value.)</li>
-</ul>
-</li>
-</ul>
-<h4 id="Examples"><a href="#Examples" class="headerlink" title="Examples:"></a>Examples:</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T&amp; param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> cx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>&amp; rx = x;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(x); <span class="comment">// p:int&amp;, T: int</span></span><br><span class="line"><span class="built_in">f</span>(cx); <span class="comment">// p:const int&amp;, T: const int</span></span><br><span class="line"><span class="built_in">f</span>(rx); <span class="comment">// p: const int&amp;, T: const int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="type">const</span> T&amp; param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> cx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>&amp; rx = x;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(x); <span class="comment">// p:const int&amp;, T: int</span></span><br><span class="line"><span class="built_in">f</span>(cx); <span class="comment">// p:const int&amp;, T: int</span></span><br><span class="line"><span class="built_in">f</span>(rx); <span class="comment">// p: const int&amp;, T: int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T* param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>* px = &amp;x;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(&amp;x); <span class="comment">// p:int*, T: int</span></span><br><span class="line"><span class="built_in">f</span>(px); <span class="comment">// p:const int*, T: const int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T&amp;&amp; param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> cx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>&amp; rx = x;</span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(x);  <span class="comment">// p:int&amp;, T: int&amp;</span></span><br><span class="line"><span class="built_in">f</span>(cx); <span class="comment">// p:const int&amp;, T: const int&amp;</span></span><br><span class="line"><span class="built_in">f</span>(rx); <span class="comment">// p:const int&amp;, T: const int&amp;</span></span><br><span class="line"><span class="built_in">f</span>(<span class="number">27</span>); <span class="comment">// p:int &amp;&amp;, T: int</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T param)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> x = <span class="number">27</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> cx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span>&amp; rx = x;</span><br><span class="line"><span class="type">const</span> <span class="type">char</span>* <span class="type">const</span> ptr = <span class="string">&quot;const pointer to const object&quot;</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">f</span>(x);  <span class="comment">// p: int, T: int</span></span><br><span class="line"><span class="built_in">f</span>(cx); <span class="comment">// p: int, T: const int</span></span><br><span class="line"><span class="built_in">f</span>(rx); <span class="comment">// p: int, T: int</span></span><br><span class="line"><span class="built_in">f</span>(ptr);<span class="comment">// p: const char*, T:const char*</span></span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="Notes"><a href="#Notes" class="headerlink" title="Notes:"></a>Notes:</h4><ol>
-<li>That’s why passing a const object to a template taking a T&amp; parameter is safe: the constness of the object becomes part of the type deduced for T.</li>
-<li>Universal Reference down to lvalue reference is the only situation that a template type T is deduced to be a reference.</li>
-<li>The fact that cx and rx can’t be modified says nothing about whether param can be.</li>
-<li>Although functions cannot declare parameters that are truly arrays, they can declare parameters that are references to arrays.</li>
-<li>Arguments that are array or function names decay to pointers, unless they are used to initialize references.</li>
-</ol>
-<h3 id="Item2-auto-type-deduction"><a href="#Item2-auto-type-deduction" class="headerlink" title="Item2 auto type deduction"></a>Item2 auto type deduction</h3><p>only one difference: </p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> x5 = &#123;<span class="number">27</span>&#125;; <span class="comment">// int</span></span><br><span class="line"><span class="keyword">auto</span> x5 = &#123;<span class="number">27</span>&#125;; <span class="comment">// std::initializer_list&lt;int&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>and one hint:</p>
-<p>when in a <strong>function return type</strong> or a lambda parameter, auto implies template type deduction, not auto type deduction</p>
-<h3 id="Item3-decltype"><a href="#Item3-decltype" class="headerlink" title="Item3 decltype"></a>Item3 decltype</h3><p>Usage:</p>
-<ul>
-<li><p>help to compute return type:</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Container, <span class="keyword">typename</span> Index&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">func</span><span class="params">(Container&amp; C, Index i)</span></span></span><br><span class="line"><span class="function">-&gt;<span class="title">decltype</span><span class="params">(c[i])</span> <span class="comment">// C++11 : trailing return type</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">authenticateUser</span>();</span><br><span class="line">    <span class="keyword">return</span> c[i]; <span class="comment">// should forward</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>implies not to stripe off the reference. Otherwise, rvalue cannot be assigned.</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Container, <span class="keyword">typename</span> Index&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">decltype</span>(<span class="keyword">auto</span>) <span class="title">func</span><span class="params">(Container&amp; C, Index i)</span> <span class="comment">// C++14, actually using &amp;&amp; that can both point to lvalue or rvalue is better</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">authenticateUser</span>();</span><br><span class="line">    <span class="keyword">return</span> c[i]; <span class="comment">// should forward</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>Strategy:</p>
-<ul>
-<li>for lvalue expressions of type T, other than names, reports a type of T&amp;.</li>
-</ul>
-<p>Note:</p>
-<ol>
-<li>C++11 permits return types for single statement lambdas to be deduced, while C++14 extends to all lambdas and all functions.</li>
-<li>auto specifies that the type is to be deduced, and decltype says that decltype rules should be used.</li>
-<li>Putting parentheses around a name can change the type that decltype reports for it.</li>
-</ol>
-<h3 id="Item4-view-deduced-types"><a href="#Item4-view-deduced-types" class="headerlink" title="Item4 view deduced types"></a>Item4 view deduced types</h3><p> Neither of IDE&#x2F;Compiler is completely correct, but the <code>Boost TypeIndex</code> library is accurate.</p>
-
       
     </div>
 
@@ -1192,110 +1340,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/21/[Sigsegv]chkstk_ms()/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
-      <meta itemprop="name" content="Asp">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/03/21/%5BSigsegv%5Dchkstk_ms()/" class="post-title-link" itemprop="url">Clang Static Analyzer · Checker Developer's Guide [CN] (3)</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2022-03-21 17:00:00" itemprop="dateCreated datePublished" datetime="2022-03-21T17:00:00+08:00">2022-03-21</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-04-25 18:02:36" itemprop="dateModified" datetime="2022-04-25T18:02:36+08:00">2022-04-25</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/CSA/" itemprop="url" rel="index"><span itemprop="name">CSA</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="SigSEGV-bison-chkstk-ms"><a href="#SigSEGV-bison-chkstk-ms" class="headerlink" title="[SigSEGV]bison - chkstk_ms()"></a>[SigSEGV]bison - chkstk_ms()</h1><p>在用bison写parser的时候遇到这个问题，感觉并不是偶然现象，有必要仔细探究一下，判断其对于后续的影响。</p>
-<h3 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h3><p>在语法分析器中，需要暂存当前已移入(shifted)而尚未被规约(not reduced yet)的符号们。举例说明，当解析<code>a+b*c</code>这个表达式，尚未遇到结尾符号<code>c</code>时，会需要暂时保存前面所有的token。因为只有遇到了<code>c</code>，才可以把<code>b*c</code>规约成一个expression，进而和<code>a</code>再规约成更高级的expression。所以在语法分析器设计的时候，为了避免符号栈爆炸，常常会需要仔细考虑表达式和符号的结合性。</p>
-<p>在我个人看来，左右结合是各有利弊的。具体来说：</p>
-<ul>
-<li>左结合，也即形如<code>((a+b)+c)</code>的优点在于，减少语法分析器中暂存的移入栈中的符号的个数。</li>
-<li>右结合，也即形如<code>(a+(b+c))</code>的优点在于，可以在从根节点开始向下访问的时候，首先访问到头结点，并且在每一层都可以实时地知道左节点对右节点的影响。这来自于我的一种直觉：“上文对下文的影响”往往比“下文对上文的影响”多。在一些需要考虑前一个节点是谁来做判断的时候，根据我的经验，这样写更加符合我们的认知习惯。</li>
-</ul>
-<p>我们的parser在var list和statement中都采用了右结合。这在设计之初并没有被我们重视。但在输入规模远超预期的时候，它的影响就体现出来了。</p>
-<h3 id="问题还原"><a href="#问题还原" class="headerlink" title="问题还原"></a>问题还原</h3><p>产生parser的过程并没有任何问题，但在实际parsing的过程中，我们常常会遇到这样的报错：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cygwin</span></span><br><span class="line">$ ./run xxx.VTL</span><br><span class="line">Segmentation fault(core dumped)</span><br><span class="line"></span><br><span class="line">$ gdb ./run </span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Thread 1 <span class="string">&quot;run&quot;</span> received signal SIGSEGV, Segmentation fault.</span><br><span class="line">___chkstk_ms () at /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S:126</span><br><span class="line">126     /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S: No such file or directory.</span><br><span class="line">(gdb) back</span><br><span class="line"><span class="comment">#0  ___chkstk_ms ()</span></span><br><span class="line">    at /usr/src/debug/gcc-10.2.0-1/libgcc/config/i386/cygwin.S:126</span><br><span class="line"><span class="comment">#1  0x000000010040108a in VTLparse (</span></span><br><span class="line">    scanner=&lt;error reading variable: Cannot access memory at address 0x10033cd18&gt;, mod=&lt;error reading variable: Cannot access memory at address 0x10033cd10&gt;)</span><br><span class="line">    at parser.tab.c:1112</span><br><span class="line"><span class="comment">#2  0x00000001004099d2 in VTL_parse_module_from_file_to_file (</span></span><br><span class="line">    filename=0xffffcc8c <span class="string">&quot;xxx.VTL&quot;</span>, fp=0x80004a608) at module.c:52</span><br><span class="line"><span class="comment">#3  0x0000000100409a75 in VTL_parse_module_from_file_to_string (</span></span><br><span class="line">    filename=0xffffcc8c <span class="string">&quot;xxx.VTL&quot;</span>) at module.c:64</span><br><span class="line"><span class="comment">#4  0x0000000100409d44 in main (argc=2, argv=0xffffcc40) at main.c:12</span></span><br></pre></td></tr></table></figure>
-
-<p>这个错误并不每次出现，在linux中通常不会出现这个问题，但是在windows下，同样的情况，就有可能会出现这个问题。windows中也并不总是出现这个问题。</p>
-<p>最初遇到这个问题的时候，我用<code>valgrind</code>进行内存检查。发现出现了invalid read &amp; write。经排查，发现是bison中未被纳入语法树的节点并不会被自动回收（例如<code>a+b</code>，加号这个token并不会被我并入二叉树，只是在它们产生的父节点中填一个key叫expr_add）。语法树小的时候这微不足道，大的时候这还是很可观的。于是我手动书写了无效节点的回收，然后<code>valgrind</code>检查中就没有了任何错误。但是问题并没有消除。</p>
-<p>在<code>cygwin</code>中，确乎是出现了疑似内存访问越界的bug（也即这个SIGSEGV）。逐句调试的时候会发现，其出错发生在调用某函数的一瞬间。（甚至无法达到函数中的第一句语句），就好像是函数压栈的时候出了问题。在进行了很多无效的尝试之后，我修改了bison中的栈大小，从<code>8192</code>改成了<code>16384</code>，就解决了问题。由此分析，好像是栈耗尽产生的问题。</p>
-<p>但今天，一个上限设置为<code>163840</code>的parser出现了同样的问题。而我将其改大并没有解决，反倒是改小解决了问题。这就非常让人在意。于是，我去研究了一下这个chkstk_ms()究竟是何方神圣，又是怎么引起了这一次次的错误。</p>
-<h3 id="问题溯源"><a href="#问题溯源" class="headerlink" title="问题溯源"></a>问题溯源</h3><p>在GCC的<a target="_blank" rel="noopener" href="https://github.com/gcc-mirror/gcc/blob/master/libgcc/config/i386/cygwin.S">源码</a>里，<code>__chkstk_ms()</code>的部分是：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">// gcc, cygwin.S</span><br><span class="line">___chkstk_ms:</span><br><span class="line">	pushq	%rcx			/* save temps */</span><br><span class="line">	cfi_push(%rcx)</span><br><span class="line">	pushq	%rax</span><br><span class="line">	cfi_push(%rax)</span><br><span class="line">	cmpq	$0x1000, %rax		/* &gt; 4k ?*/</span><br><span class="line">	leaq	24(%rsp), %rcx		/* point past return addr */</span><br><span class="line">	jb	2f</span><br><span class="line"></span><br><span class="line">1:	subq	$0x1000, %rcx  		/* yes, move pointer down 4k */</span><br><span class="line">	orq	$0x0, (%rcx)   		/* probe there */</span><br><span class="line">	subq	$0x1000, %rax  	 	/* decrement count */</span><br><span class="line">	cmpq	$0x1000, %rax</span><br><span class="line">	ja	1b			/* and do it again */</span><br><span class="line"></span><br><span class="line">2:	subq	%rax, %rcx</span><br><span class="line">	orq	$0x0, (%rcx)		/* less than 4k, just peek here */</span><br><span class="line"></span><br><span class="line">	popq	%rax</span><br><span class="line">	cfi_pop(%rax)</span><br><span class="line">	popq	%rcx</span><br><span class="line">	cfi_pop(%rcx)</span><br><span class="line">	ret</span><br><span class="line">	cfi_endproc()</span><br></pre></td></tr></table></figure>
-
-<p>所做的是：接受一个栈大小，以rax传入，然后把它调整到一个4k的倍数，然后以4k为大小向下调整。 </p>
-<p>借此分析，我们所遇到的问题是，将一个栈的大小传给了<code>chkstk_ms()</code>后，后者访问了该栈的内存页，但引发了崩溃。这种崩溃，根据MSDN的说法，是由<code>GUARD PAGE</code>产生的。在window中，有<code>GUARD PAGE</code>的设定：在分配了若干长度的一个数据结构后，会紧跟着在后面设置一个<code>GUARD PAGE</code>，以避免越界。其利用CPU的异常机制，将<code>PAGE_PRESET</code>位标志为0，访问该页的时候，就会触发一个<code>\#PAGE FAULT</code> 异常，操作系统的事先定义好的处理函数就会被调用。</p>
-<p>stackdump信息为：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Exception: STATUS_STACK_OVERFLOW at rip=00100409E66^M</span><br><span class="line">rax=0000000000148338 rbx=000000018023E7A0 rcx=00000000FFE03A28^M</span><br><span class="line">rdx=00000000FFFFCA78 rsi=0000000000000000 rdi=0000000000000000^M</span><br><span class="line">r8 =0000000000000000 r9 =0000000000000016 r10=0000000100000000^M</span><br><span class="line">r11=00000001004085A2 r12=00000000FFFFCC80 r13=00000000FFFFCDF0^M</span><br><span class="line">r14=0000000000000000 r15=0000000000000000^M</span><br><span class="line">rbp=00000000FFFFCBC0 rsp=00000000FFFFCA10^M</span><br><span class="line">program=\\wsl$\Centos7\root\vtlparser\vtlparser\run, pid 1329, thread ^M</span><br><span class="line">cs=0033 ds=002B es=002B fs=0053 gs=002B ss=002B^M</span><br><span class="line">Stack trace:^M</span><br><span class="line">Frame        Function    Args^M</span><br><span class="line">000FFFFCBC0  00100409E66 (0010040108A, 001004099D2, 00000000000, 00000000003)^M</span><br><span class="line">000FFFFCBC0  00000340338 (001004099D2, 00000000000, 00000000003, 00000000000)^M</span><br><span class="line">000FFFFCBC0  00800038840 (00000000000, 00000000003, 00000000000, 0018015CC05)^M</span><br><span class="line">000FFFFCBC0  0010040108A (00000000003, 00000000000, 0018015CC05, 001802B1E39)^M</span><br><span class="line">000FFFFCBC0  001004099D2 (001800485F2, 00100400000, 00180044AD5, 0010040A5D0)^M</span><br><span class="line">000FFFFCBC0  00100409A75 (00000000000, 00000000000, 001801B885A, 00000000000)^M</span><br><span class="line">000FFFFCBC0  00100409D44 (00000000020, 8080808080808080, 00180049E91, 00180048D30)^M</span><br><span class="line">000FFFFCCE0  00180049EFD (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">000FFFFFFF0  00180047856 (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">000FFFFFFF0  00180047904 (00000000000, 00000000000, 00000000000, 00000000000)^M</span><br><span class="line">End of stack trace</span><br></pre></td></tr></table></figure>
-
-<p>rax为148338，取整为149000，在试图设置一个这个大小的栈时候，访问越界，踩到了guard page上。但这个大小远大于我们设置的大小，这很奇怪。</p>
-<p>而我们去查看bison产生的parser.tab.c，其中是这样写的：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">    <span class="comment">/* The OS might guarantee only one guard page at the bottom of the stack,</span></span><br><span class="line"><span class="comment">       and a page size can be as small as 4096 bytes.  So we cannot safely</span></span><br><span class="line"><span class="comment">       invoke alloca (N) if N exceeds 4096.  Use a slightly smaller number</span></span><br><span class="line"><span class="comment">       to allow for a few compiler-allocated temporary stack slots.  */</span></span><br><span class="line"><span class="meta">#   <span class="keyword">define</span> YYSTACK_ALLOC_MAXIMUM 4032 <span class="comment">/* reasonable circa 2006 */</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/* YYMAXDEPTH -- maximum size the stacks can grow to (effective only</span></span><br><span class="line"><span class="comment">   if the built-in stack extension method is used).</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">   Do not make this value too large; the results are undefined if</span></span><br><span class="line"><span class="comment">   YYSTACK_ALLOC_MAXIMUM &lt; YYSTACK_BYTES (YYMAXDEPTH)</span></span><br><span class="line"><span class="comment">   evaluated with infinite-precision integer arithmetic.  */</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> YYMAXDEPTH</span></span><br><span class="line"><span class="meta"># <span class="keyword">define</span> YYMAXDEPTH 10000</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">       </span><br><span class="line">       </span><br></pre></td></tr></table></figure>
-
-<p>原因就清晰了。</p>
-<p>简而言之，bison的作者认为，操作系统并不一定会在每个页后面（显然，由于虚拟内存的存在，页不一定是连续的）都创造一个guard page，而这会有些危险。所以它设置了，最大的页大小：4032个字节。（这小于linux中普通页的大小4096B，因而在作者看来是安全的）。而当我们把bison的栈的大小开得大于它的时候（也即大于32256），其将可能由于内置的一些运算产生不确定结果。</p>
-<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>综上，栈开得小的时候，可能会由于移进栈爆炸而出错，开得过大的时候，则可能出现不稳定的错误。Bison本身不认为会有人一次性处理超过一整个内存页的token，但不幸的是我们写了一个右结合，而输入的用例里，VAR LIST可能确实会很大。</p>
-<p>由于改动可能会引起下游的一系列修改（关于这一点的具体工作量存疑），暂时姑且把栈开一个较大值，待后续迫不得已的时候再进行修改。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1367,7 +1411,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">17</span>
+          <span class="site-state-item-count">18</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

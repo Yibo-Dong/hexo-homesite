@@ -20,19 +20,19 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="Hello World! It starts!">
+  <meta name="description" content="Effective Modern C++ (2) AutoBriefThis chapter talks about ‘auto’. This keyword is supported from C++11, and is very convenient at most times. However, in some occasions, its behavior may seem just ‘w">
 <meta property="og:type" content="article">
-<meta property="og:title" content="This is the very new beginning!">
-<meta property="og:url" content="http://example.com/2021/09/26/This-is-the-very-new-beginning/index.html">
+<meta property="og:title" content="Effective Modern C++ (2)">
+<meta property="og:url" content="http://example.com/2022/05/05/Effective-Modern-C++-(2)/index.html">
 <meta property="og:site_name" content="Good Good Study">
-<meta property="og:description" content="Hello World! It starts!">
+<meta property="og:description" content="Effective Modern C++ (2) AutoBriefThis chapter talks about ‘auto’. This keyword is supported from C++11, and is very convenient at most times. However, in some occasions, its behavior may seem just ‘w">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2021-09-25T16:02:12.000Z">
-<meta property="article:modified_time" content="2022-03-21T10:22:06.643Z">
+<meta property="article:published_time" content="2022-05-05T11:00:00.000Z">
+<meta property="article:modified_time" content="2022-05-05T11:54:42.723Z">
 <meta property="article:author" content="Asp">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://example.com/2021/09/26/This-is-the-very-new-beginning/">
+<link rel="canonical" href="http://example.com/2022/05/05/Effective-Modern-C++-(2)/">
 
 
 <script id="page-configurations">
@@ -45,7 +45,7 @@
   };
 </script>
 
-  <title>This is the very new beginning! | Good Good Study</title>
+  <title>Effective Modern C++ (2) | Good Good Study</title>
   
 
 
@@ -166,7 +166,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/26/This-is-the-very-new-beginning/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/05/Effective-Modern-C++-(2)/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
@@ -179,7 +179,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          This is the very new beginning!
+          Effective Modern C++ (2)
         </h1>
 
         <div class="post-meta">
@@ -188,16 +188,19 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2021-09-26 00:02:12" itemprop="dateCreated datePublished" datetime="2021-09-26T00:02:12+08:00">2021-09-26</time>
+              <time title="Created: 2022-05-05 19:00:00 / Modified: 19:54:42" itemprop="dateCreated datePublished" datetime="2022-05-05T19:00:00+08:00">2022-05-05</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-03-21 18:22:06" itemprop="dateModified" datetime="2022-03-21T18:22:06+08:00">2022-03-21</time>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
               </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Effective-Modern-C/" itemprop="url" rel="index"><span itemprop="name">Effective Modern C++</span></a>
+                </span>
+            </span>
 
           
 
@@ -210,8 +213,71 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>Hello World!</p>
-<p>It starts!</p>
+        <h2 id="Effective-Modern-C-2-Auto"><a href="#Effective-Modern-C-2-Auto" class="headerlink" title="Effective Modern C++ (2) Auto"></a>Effective Modern C++ (2) Auto</h2><h3 id="Brief"><a href="#Brief" class="headerlink" title="Brief"></a>Brief</h3><p>This chapter talks about ‘auto’. This keyword is supported from C++11, and is very convenient at most times. However, in some occasions, its behavior may seem just ‘wrong’ to programmers. This chapter has two items, introducing us to auto’s ins and outs.</p>
+<h3 id="Item-5-Prefer-auto-to-explicit-type-declarations"><a href="#Item-5-Prefer-auto-to-explicit-type-declarations" class="headerlink" title="Item 5 Prefer auto to explicit type declarations."></a>Item 5 Prefer auto to explicit type declarations.</h3><h5 id="Why-auto-is-good"><a href="#Why-auto-is-good" class="headerlink" title="Why auto is good:"></a>Why <code>auto</code> is good:</h5><ul>
+<li>write less</li>
+<li>when it comes to holding a closure, it uses as much memory as the closure requires. <ul>
+<li><code>std::function</code>, on the contrary, has a fixed size for any given signature, and thus may yield out-of-memory exceptions.</li>
+</ul>
+</li>
+<li>can help reduce uninitialized problems</li>
+<li>can be cross-platform.<ul>
+<li>e.g. <code>std::vector&lt;int&gt;::size_type</code> becomes 64 bits on 64-bit Windows, while<code>unsigned</code> is still 32 bits.</li>
+</ul>
+</li>
+<li>avoid const-missing in for-range and so on.<ul>
+<li>e.g. key part of unordered_map in const. If you write something without a const qualification, it will be copied every time.</li>
+</ul>
+</li>
+<li>enhance readability.</li>
+</ul>
+<h5 id="Why-auto-is-not-perfect"><a href="#Why-auto-is-not-perfect" class="headerlink" title="Why auto is not perfect:"></a>Why <code>auto</code> is not perfect:</h5><ul>
+<li>the deduced type may be “strange” <ul>
+<li>e.g. <code>std::initial_list</code></li>
+</ul>
+</li>
+<li>Seen in Item 6</li>
+</ul>
+<h5 id="other-notes"><a href="#other-notes" class="headerlink" title="other notes:"></a>other notes:</h5><ul>
+<li><code>std::function</code> objects can refer to any callable object, i.e. , to anything that can be invoked like a function.</li>
+</ul>
+<h3 id="Item-6-Use-the-explicitly-typed-initializer-idiom-when-auto-deduces-undesired-types"><a href="#Item-6-Use-the-explicitly-typed-initializer-idiom-when-auto-deduces-undesired-types" class="headerlink" title="Item 6 Use the explicitly typed initializer idiom when auto deduces undesired types."></a>Item 6 Use the explicitly typed initializer idiom when <code>auto</code> deduces undesired types.</h3><h5 id="When-auto-zig-zag"><a href="#When-auto-zig-zag" class="headerlink" title="When auto zig-zag:"></a>When <code>auto</code> zig-zag:</h5><ul>
+<li><p>lack of the implicit cast</p>
+<ul>
+<li><code>std::vector&lt;bool&gt;[1]</code>, without <code>bool</code> specified, turns out to be dangling pointers(pointing to temporary objects) on some implementations.</li>
+</ul>
+</li>
+<li><p>invisible proxy class</p>
+<ul>
+<li><p>just like <code>std::vector::reference</code>,</p>
+</li>
+<li><p>Expression templates</p>
+<ul>
+<li>as to numerical operations, if operators returns a proxy for the result instead of the result itself, it would be faster.</li>
+</ul>
+</li>
+<li><p>they are not designed to live longer than a single statement.</p>
+</li>
+<li><p>should avoid:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> somevar = expression of invisible proxy <span class="keyword">class</span> types.</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>how to avoid: </p>
+<ul>
+<li>static_cast&lt;&gt;</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Other notes:</p>
+<ul>
+<li><code>std::vector&lt;bool&gt;</code> is specified to represent its bools in packed form, one bit per bool.</li>
+<li>C++ forbids reference to bits.</li>
+<li>how to find invisible proxy class:<ul>
+<li>function signatures will reflect them: operator returning a reference.</li>
+</ul>
+</li>
+</ul>
 
     </div>
 
@@ -227,12 +293,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/09/23/compile%20KLEE%20from%20source/" rel="prev" title="源码编译KLEE">
-      <i class="fa fa-chevron-left"></i> 源码编译KLEE
+    <a href="/2022/04/26/%E5%85%B3%E4%BA%8E%E6%A0%87%E7%AD%BE%E5%88%86%E5%8F%91%E7%9A%84%E4%B8%80%E7%82%B9%E8%AE%B0%E5%BD%95/" rel="prev" title="关于标签分发的一点记录">
+      <i class="fa fa-chevron-left"></i> 关于标签分发的一点记录
     </a></div>
       <div class="post-nav-item">
-    <a href="/2021/10/15/hello-world/" rel="next" title="Hello World">
-      Hello World <i class="fa fa-chevron-right"></i>
+    <a href="/2022/05/05/Effective-Modern-C++-(1)/" rel="next" title="Effective Modern C++ (2)">
+      Effective Modern C++ (2) <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -292,6 +358,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Effective-Modern-C-2-Auto"><span class="nav-number">1.</span> <span class="nav-text">Effective Modern C++ (2) Auto</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Brief"><span class="nav-number">1.1.</span> <span class="nav-text">Brief</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Item-5-Prefer-auto-to-explicit-type-declarations"><span class="nav-number">1.2.</span> <span class="nav-text">Item 5 Prefer auto to explicit type declarations.</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Why-auto-is-good"><span class="nav-number">1.2.0.1.</span> <span class="nav-text">Why auto is good:</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Why-auto-is-not-perfect"><span class="nav-number">1.2.0.2.</span> <span class="nav-text">Why auto is not perfect:</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#other-notes"><span class="nav-number">1.2.0.3.</span> <span class="nav-text">other notes:</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Item-6-Use-the-explicitly-typed-initializer-idiom-when-auto-deduces-undesired-types"><span class="nav-number">1.3.</span> <span class="nav-text">Item 6 Use the explicitly typed initializer idiom when auto deduces undesired types.</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#When-auto-zig-zag"><span class="nav-number">1.3.0.1.</span> <span class="nav-text">When auto zig-zag:</span></a></li></ol></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
