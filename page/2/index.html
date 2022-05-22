@@ -161,6 +161,236 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/23/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/23/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B02/" class="post-title-link" itemprop="url">《clang 源码导读》 笔记(2)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-03-23 17:00:00" itemprop="dateCreated datePublished" datetime="2022-03-23T17:00:00+08:00">2022-03-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-04-25 18:04:11" itemprop="dateModified" datetime="2022-04-25T18:04:11+08:00">2022-04-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/reading-notes/" itemprop="url" rel="index"><span itemprop="name">reading notes</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="Chapter2-Clang-Driver及总体流程"><a href="#Chapter2-Clang-Driver及总体流程" class="headerlink" title="Chapter2 Clang Driver及总体流程"></a>Chapter2 Clang Driver及总体流程</h3><p>供参考的链接：<a target="_blank" rel="noopener" href="https://clang.llvm.org/docs/DriverInternals.html#low-overhead">https://clang.llvm.org/docs/DriverInternals.html#low-overhead</a></p>
+<p>代码的位置：<code>clang/driver/Driver.h</code></p>
+<h4 id="关注点"><a href="#关注点" class="headerlink" title="关注点"></a>关注点</h4><ul>
+<li>clang driver 的整体流程</li>
+<li>PipeLine分为哪几步？</li>
+</ul>
+<h4 id="clang-driver-流程"><a href="#clang-driver-流程" class="headerlink" title="clang-driver 流程"></a>clang-driver 流程</h4><p>前面介绍过，clang driver本身是一个“驱动”器，并不负责真正的编译工作，而是组装指令（无论是编译器的还是ld的命令）。</p>
+<p>clang driver的处理流程分为若干阶段：解析参数（Parse） -&gt; 构造编译流水线（Pipeline） -&gt; 选择工具和文件名（Bind）-&gt;  转换参数（Translation）-&gt; 调用工具执行任务（Execute）。整体流程如下：</p>
+<p><img src="https://clang.llvm.org/docs/_images/DriverArchitecture.png" alt="Driver Architecture Diagram"></p>
+<p>以下简单介绍每个步骤。</p>
+<h5 id="Parse"><a href="#Parse" class="headerlink" title="Parse"></a>Parse</h5><p>解析输入的命令行参数，生成参数列表（arglist），无须赘述。</p>
+<h5 id="PipeLine"><a href="#PipeLine" class="headerlink" title="PipeLine"></a>PipeLine</h5><p>根据输入的文件和类型，构建出一系列的action。</p>
+<p>借助<code>clang -ccc-print-phases</code> 可以查看action。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang-7 -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br><span class="line">2: compiler, &#123;1&#125;, ir</span><br><span class="line">3: backend, &#123;2&#125;, assembler</span><br><span class="line">4: assembler, &#123;3&#125;, object</span><br><span class="line">5: linker, &#123;4&#125;, image</span><br><span class="line"></span><br><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang-7 -c -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br><span class="line">2: compiler, &#123;1&#125;, ir</span><br><span class="line">3: backend, &#123;2&#125;, assembler</span><br><span class="line">4: assembler, &#123;3&#125;, object</span><br><span class="line"></span><br><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang -S -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br><span class="line">2: compiler, &#123;1&#125;, ir</span><br><span class="line">3: backend, &#123;2&#125;, assembler</span><br><span class="line"></span><br><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang -emit-llvm -S -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br><span class="line">2: compiler, &#123;1&#125;, ir</span><br><span class="line">3: backend, &#123;2&#125;, ir</span><br><span class="line"></span><br><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang -E -ccc-print-phases t0.c</span><br><span class="line">0: input, &quot;t0.c&quot;, c</span><br><span class="line">1: preprocessor, &#123;0&#125;, cpp-output</span><br></pre></td></tr></table></figure>
+
+<p>可见，<code>-c</code>指令到assembler就中止了，并没有最后的link步骤，而<code>-S</code>则进一步缺少了IR之后的汇编步骤。<code>-emit-llvm</code>会停留在生成IR， <code>-E</code>则是仅进行预处理。</p>
+<p>关于action的步骤，有一张图可以参考：</p>
+<p><img src="https://pic2.zhimg.com/80/v2-15d13d5b18dc0aa8477189ef24f6cf8d_720w.jpg" alt="img"></p>
+<h5 id="Bind"><a href="#Bind" class="headerlink" title="Bind"></a>Bind</h5><p>对于不同的action，选择对应的工具和文件名。</p>
+<p>借助<code>clang -ccc-print-bindings</code>可以查看对应的工具和文件名。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang-7 -ccc-print-bindings   t0.c</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&quot;x86_64-pc-linux-gnu&quot;</span> - <span class="string">&quot;clang&quot;</span>, inputs: [<span class="string">&quot;t0.c&quot;</span>], output: <span class="string">&quot;/tmp/t0-47c0f3.o&quot;</span></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&quot;x86_64-pc-linux-gnu&quot;</span> - <span class="string">&quot;GNU::Linker&quot;</span>, inputs: [<span class="string">&quot;/tmp/t0-47c0f3.o&quot;</span>], output: <span class="string">&quot;a.out&quot;</span></span></span><br></pre></td></tr></table></figure>
+
+<p>例如这里，编译所采用的工具是clang（作为编译器的clang，即clang -cc1），而linker采用的是GNU的linker。</p>
+<h5 id="Translation"><a href="#Translation" class="headerlink" title="Translation"></a>Translation</h5><p>根据编译参数，为每个tool生成参数。</p>
+<p>借助<code>-###</code>选项可以查看内部的指令。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dyb@DESKTOP-JNDKOVB:~/clang_source_tests$ clang-7 -### t0.c</span><br><span class="line">clang version 7.0.1-12 (tags/RELEASE_701/final)</span><br><span class="line">Target: x86_64-pc-linux-gnu</span><br><span class="line">Thread model: posix</span><br><span class="line">InstalledDir: /usr/bin</span><br><span class="line"> &quot;/usr/lib/llvm-7/bin/clang&quot; &quot;-cc1&quot; &quot;-triple&quot; &quot;x86_64-pc-linux-gnu&quot; &quot;-emit-obj&quot; &quot;-mrelax-all&quot; &quot;-disable-free&quot; &quot;-disable-llvm-verifier&quot; &quot;-discard-value-names&quot; &quot;-main-file-name&quot; &quot;t0.c&quot; &quot;-mrelocation-model&quot; &quot;static&quot; &quot;-mthread-model&quot; &quot;posix&quot; &quot;-mdisable-fp-elim&quot; &quot;-fmath-errno&quot; &quot;-masm-verbose&quot; &quot;-mconstructor-aliases&quot; &quot;-munwind-tables&quot; &quot;-fuse-init-array&quot; &quot;-target-cpu&quot; &quot;x86-64&quot; &quot;-dwarf-column-info&quot; &quot;-debugger-tuning=gdb&quot; &quot;-resource-dir&quot; &quot;/usr/lib/llvm-7/lib/clang/7.0.1&quot; &quot;-internal-isystem&quot; &quot;/usr/local/include&quot; &quot;-internal-isystem&quot; &quot;/usr/lib/llvm-7/lib/clang/7.0.1/include&quot; &quot;-internal-externc-isystem&quot; &quot;/usr/include/x86_64-linux-gnu&quot; &quot;-internal-externc-isystem&quot; &quot;/include&quot; &quot;-internal-externc-isystem&quot; &quot;/usr/include&quot; &quot;-fdebug-compilation-dir&quot; &quot;/home/dyb/clang_source_tests&quot; &quot;-ferror-limit&quot; &quot;19&quot; &quot;-fmessage-length&quot; &quot;120&quot; &quot;-fobjc-runtime=gcc&quot; &quot;-fdiagnostics-show-option&quot; &quot;-fcolor-diagnostics&quot; &quot;-o&quot; &quot;/tmp/t0-25b43e.o&quot; &quot;-x&quot; &quot;c&quot; &quot;t0.c&quot; &quot;-faddrsig&quot;</span><br><span class="line"> &quot;/usr/bin/ld&quot; &quot;--build-id&quot; &quot;--eh-frame-hdr&quot; &quot;-m&quot; &quot;elf_x86_64&quot; &quot;-dynamic-linker&quot; &quot;/lib64/ld-linux-x86-64.so.2&quot; &quot;-o&quot; &quot;a.out&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/crt1.o&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/crti.o&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/crtbegin.o&quot; &quot;-L/usr/bin/../lib/gcc/x86_64-linux-gnu/9&quot; &quot;-L/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu&quot; &quot;-L/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../../lib64&quot; &quot;-L/lib/x86_64-linux-gnu&quot; &quot;-L/lib/../lib64&quot; &quot;-L/usr/lib/x86_64-linux-gnu&quot; &quot;-L/usr/lib/../lib64&quot; &quot;-L/usr/lib/x86_64-linux-gnu/../../lib64&quot; &quot;-L/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../..&quot; &quot;-L/usr/lib/llvm-7/bin/../lib&quot; &quot;-L/lib&quot; &quot;-L/usr/lib&quot; &quot;/tmp/t0-25b43e.o&quot; &quot;-lgcc&quot; &quot;--as-needed&quot; &quot;-lgcc_s&quot; &quot;--no-as-needed&quot; &quot;-lc&quot; &quot;-lgcc&quot; &quot;--as-needed&quot; &quot;-lgcc_s&quot; &quot;--no-as-needed&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/crtend.o&quot; &quot;/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/crtn.o&quot;</span><br></pre></td></tr></table></figure>
+
+<p>例如这里：</p>
+<p>给到<code>clang -cc1</code>的参数：<code>-triple x86_64-pc-linux-gnu ...</code> 。对应Triple中<code>Arc+Vend+OS</code>的结构。</p>
+<p>给到<code>ld</code>的参数：<code>--build-id --eh-frame-hdr ... -o  a.out </code>。</p>
+<h5 id="Execution"><a href="#Execution" class="headerlink" title="Execution"></a>Execution</h5><p>实际创建进线程，调用不同tool，根据翻译出的参数，执行不同的任务。</p>
+<h3 id="clang的流程"><a href="#clang的流程" class="headerlink" title="clang的流程"></a>clang的流程</h3><p>在调用”clang”的过程中，发生的流程大致为：</p>
+<ul>
+<li>clang 以driver身份被调用</li>
+<li>clang driver根据传入的参数创建job，例如“编译任务”, “链接任务”</li>
+<li>创建进程，执行对应的job</li>
+</ul>
+<p>实际流程：</p>
+<ul>
+<li><p>main先创建诊断信息（Diagnostic）实例。</p>
+</li>
+<li><p>随后创建Driver实例负责后续任务：</p>
+<ul>
+<li><p>使用Driver中的<code>BuildCompilation</code>生成需要执行的命令</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// BuildCompilation - Construct a compilation object for a command</span></span><br><span class="line"><span class="comment">/// line argument vector.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// \return A compilation, or 0 if none was built for the given</span></span><br><span class="line"><span class="comment">/// argument vector. A null return value does not necessarily</span></span><br><span class="line"><span class="comment">/// indicate an error condition, the diagnostics should be queried</span></span><br><span class="line"><span class="comment">/// to determine if an error occurred.</span></span><br><span class="line"><span class="function">Compilation *<span class="title">BuildCompilation</span><span class="params">(ArrayRef&lt;<span class="type">const</span> <span class="type">char</span> *&gt; Args)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>调用<code>ParseArgString()</code>解析参数</li>
+<li>调用<code>LoadConfigFile()</code>解析配置文件</li>
+<li>调用<code>ComputeTargetTriple()</code>，获得triple</li>
+<li>根据triple获得对应的ToolChain。</li>
+<li>创建<code>compilation</code>。</li>
+<li>通过<code>BuildInputs()</code>函数获取输入文件(因为driver可以同时编译多个源码文件)，依据是扩展名”.m”。</li>
+<li>通过<code>BuildUniversalActions</code>构建JobAction。</li>
+<li>通过<code>BuildJobs</code>构建<code>Jobs</code></li>
+</ul>
+</li>
+<li><p>Driver构造完Jobs以后，会通过Driver的<code>ExecuteCompilation</code>执行命令</p>
+</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/22/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/22/%E3%80%8Aclang%20%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB%E3%80%8B%20%E7%AC%94%E8%AE%B01/" class="post-title-link" itemprop="url">《clang 源码导读》 笔记(1)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-03-22 17:00:00" itemprop="dateCreated datePublished" datetime="2022-03-22T17:00:00+08:00">2022-03-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-04-25 18:04:06" itemprop="dateModified" datetime="2022-04-25T18:04:06+08:00">2022-04-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/reading-notes/" itemprop="url" rel="index"><span itemprop="name">reading notes</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="Chapter-1-基础概念"><a href="#Chapter-1-基础概念" class="headerlink" title="Chapter 1 基础概念"></a>Chapter 1 基础概念</h3><h4 id="关注点"><a href="#关注点" class="headerlink" title="关注点"></a>关注点</h4><ul>
+<li>各副标题</li>
+</ul>
+<h4 id="“clang”-指的是什么"><a href="#“clang”-指的是什么" class="headerlink" title="“clang” 指的是什么"></a>“clang” 指的是什么</h4><ul>
+<li>“clang driver” ：一个驱动器，负责根据简单参数生成复杂参数，并不负责实际编译过程</li>
+<li>“clang -cc1”：实际的编译器，实现了编译前后端、汇编等部分</li>
+<li>“clang frontend”：编译器前端，指到生成中间代码为止。</li>
+</ul>
+<h4 id="诊断信息"><a href="#诊断信息" class="headerlink" title="诊断信息"></a>诊断信息</h4><p>不同的处理<strong>阶段</strong>具有不同种类的诊断信息，维护在<code>clang/Basic/DiagnosticDriverKinds.inc</code>里：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// DiagnosticDriverKinds.inc</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_aix_default_altivec_abi, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;The default Altivec ABI on AIX is not yet supported, use &#x27;-mabi=vec-extabi&#x27; for the extended Altivec ABI&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_checker_incompatible_analyzer_option, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;checker cannot be enabled with analyzer option &#x27;%0&#x27; == %1&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_checker_option_invalid_input, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;invalid input for checker option &#x27;%0&#x27;, that expects %1&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_checker_option_unknown, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;checker &#x27;%0&#x27; has no option called &#x27;%1&#x27;&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_config_invalid_input, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;invalid input for analyzer-config option &#x27;%0&#x27;, that expects %1 value&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_config_multiple_values, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;analyzer-config option &#x27;%0&#x27; should contain only one &#x27;=&#x27;&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">DIAG</span>(err_analyzer_config_no_value, CLASS_ERROR, (<span class="type">unsigned</span>)diag::Severity::Error, <span class="string">&quot;analyzer-config option &#x27;%0&#x27; has a key but no value&quot;</span>, <span class="number">0</span>, SFINAE_SubstitutionFailure, <span class="literal">false</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+
+<p>而在<code>DiagnosticIDs.h</code>中同样维护了诊断的类型：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// DiagnosticIDs.h</span></span><br><span class="line"><span class="comment">/// Used for handling and querying diagnostic IDs.</span></span><br><span class="line"><span class="comment">///</span></span><br><span class="line"><span class="comment">/// Can be used and shared by multiple Diagnostics for multiple translation units.</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">DiagnosticIDs</span> : <span class="keyword">public</span> RefCountedBase&lt;DiagnosticIDs&gt; &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="comment">/// The level of the diagnostic, after it has been through mapping.</span></span><br><span class="line">  <span class="keyword">enum</span> <span class="title class_">Level</span> &#123;</span><br><span class="line">    Ignored, Note, Remark, Warning, Error, Fatal</span><br><span class="line">  &#125;;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="平台信息的数据结构：llvm-Triple"><a href="#平台信息的数据结构：llvm-Triple" class="headerlink" title="平台信息的数据结构：llvm::Triple"></a>平台信息的数据结构：llvm::Triple</h4><blockquote>
+<p>“helper class for autoconf configuration names”。</p>
+</blockquote>
+<p>Triple 指的是一个string triple：”Architecture + Vendor + OS”</p>
+<p>传入的参数（例如<code>-arch</code>,<code>-target</code>等）会影响生成的triple，</p>
+<h4 id="“工具链”"><a href="#“工具链”" class="headerlink" title="“工具链”"></a>“工具链”</h4><p>这是一个概念性的术语。GNU的minGW，微软的MSCV 都属于“工具链”。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/21/[Sigsegv]chkstk_ms()/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1110,7 +1340,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

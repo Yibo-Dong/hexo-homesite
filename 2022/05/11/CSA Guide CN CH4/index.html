@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="CH4 路径敏感的分析CSA的设计是基于名为“符号执行”的静态分析方法。此方法基于程序的抽象解释，并假定将符号值赋给程序变量，再将程序的所有可能状态划分为使程序通过相同路径的状态类。   程序状态（Program State）的类通常由符号值上施加的范围约束来定义。 不过，它们在其它方面可能会有所不同，甚至可能包含一些特定于checker的差异。 分析器会实现一种保存特定内存区段（memory r">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Clang Static Analyzer · Checker Developer&#39;s Guide [CN] (4)">
+<meta property="og:url" content="http://example.com/2022/05/11/CSA%20Guide%20CN%20CH4/index.html">
+<meta property="og:site_name" content="Good Good Study">
+<meta property="og:description" content="CH4 路径敏感的分析CSA的设计是基于名为“符号执行”的静态分析方法。此方法基于程序的抽象解释，并假定将符号值赋给程序变量，再将程序的所有可能状态划分为使程序通过相同路径的状态类。   程序状态（Program State）的类通常由符号值上施加的范围约束来定义。 不过，它们在其它方面可能会有所不同，甚至可能包含一些特定于checker的差异。 分析器会实现一种保存特定内存区段（memory r">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-05-11T11:00:00.000Z">
+<meta property="article:modified_time" content="2022-05-22T14:00:39.731Z">
+<meta property="article:author" content="Asp">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/05/11/CSA%20Guide%20CN%20CH4/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Clang Static Analyzer · Checker Developer's Guide [CN] (4) | Good Good Study</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Good Good Study</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Day Day up</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/11/CSA%20Guide%20CN%20CH4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+      <meta itemprop="name" content="Asp">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Clang Static Analyzer · Checker Developer's Guide [CN] (4)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-05-11 19:00:00" itemprop="dateCreated datePublished" datetime="2022-05-11T19:00:00+08:00">2022-05-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-05-22 22:00:39" itemprop="dateModified" datetime="2022-05-22T22:00:39+08:00">2022-05-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CSA/" itemprop="url" rel="index"><span itemprop="name">CSA</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="CH4-路径敏感的分析"><a href="#CH4-路径敏感的分析" class="headerlink" title="CH4 路径敏感的分析"></a>CH4 路径敏感的分析</h3><p>CSA的设计是基于名为“符号执行”的静态分析方法。此方法基于程序的抽象解释，并假定将符号值赋给程序变量，再将程序的所有可能状态划分为使程序通过相同路径的状态类。  </p>
+<p>程序状态（Program State）的类通常由符号值上施加的范围约束来定义。 不过，它们在其它方面可能会有所不同，甚至可能包含一些特定于checker的差异。</p>
+<p>分析器会实现一种保存特定内存区段（memory region）中抽象和具体值的内存模型，并且在分析的时候使用它们。</p>
+<p>路径敏感的引擎支持过程间分析，这意味着任何时候当分析器遇到一个函数调用，它都会试图为这个函数调用建模。并且进一步分析其中的子函数。</p>
+<h4 id="4-1-从程序状态中获取信息"><a href="#4-1-从程序状态中获取信息" class="headerlink" title="4.1 从程序状态中获取信息"></a>4.1 从程序状态中获取信息</h4><p><code>Programstate</code>是路径敏感分析中的基础数据结构之一。它持有待分析瞬间程序状态的完整信息。从中你可以获得保存在内存区域中的符号值信息和定义在当前上下文环境中的表达式信息。</p>
+<p><code>Program state</code>是不可变（immutable）的。一旦一个<code>Programstate</code>被创建了。你就不能修改它。你只能再新建一个和原始的不同的<code>Programstate</code>对象。除此之外，你永远不能直接访问<code>Programstate</code>。或者手动管理它们的生命周期，它们都被包装在基于引用技术的智能指针<code>ProgramStateRef</code>中。</p>
+<p>在绝大多数路径敏感的checker回调函数中，你拥有一个可以使用的<code>CheckerContext</code>。一个它持有的关键信息是当前的程序状态，你可以简单的获得它，例如：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">checkEndFunction</span><span class="params">(CheckerContext &amp;C)</span> <span class="type">const</span></span>&#123;</span><br><span class="line">    ProgramStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>Program State</code>保存了以下关于程序的特性：</p>
+<ul>
+<li>环境 Environment ：活跃表达式的符号值</li>
+<li>区域存储 Region Store ： 内存区域的符号值</li>
+<li>范围约束 Range Constraints：符号值可以取值的范围</li>
+<li>污染 Taint：从不安全的来源获得的符号值注册信息;</li>
+<li>通用数据映射 Generic Data Map：特定checker的信息</li>
+</ul>
+<h5 id="4-1-1-获取表达式的值"><a href="#4-1-1-获取表达式的值" class="headerlink" title="4.1.1 获取表达式的值"></a>4.1.1 获取表达式的值</h5><p>分析器记录了所有它当前所需要的表达式的符号值。任何时候，当一个表达式离开了当前的上下文环境，它会触发垃圾回收机制，并不再可用。这种从表达式到符号值的映射关系称之为environment。如果一个表达式在当前的environment中是可获取的，你就可以拿到它的值：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> Expr *E = <span class="comment">/* some expr */</span></span><br><span class="line"><span class="type">const</span> LocationContext *LC = C.<span class="built_in">getLocationContext</span>();</span><br><span class="line">SVal Val = State -&gt; <span class="built_in">getSVal</span>(E,LC);</span><br></pre></td></tr></table></figure>
+
+<p>如果表达式E在当前的环境中是可获取的，则Val就会是它的符号值，否则将会返回一个<code>unknownval</code>。environment不会试图计算任何一个AST表达式的值，它只会返回一个已经存在的值。你可以确定找到的东西包括：在分析整表达式之前，其子表达式的值以及任何一个刚刚被分析过的表达式的值。这些信息对于实际需要来说通常是够用的。</p>
+<h5 id="4-1-2-关于内存区域的简要介绍"><a href="#4-1-2-关于内存区域的简要介绍" class="headerlink" title="4.1.2 关于内存区域的简要介绍"></a>4.1.2 关于内存区域的简要介绍</h5><p>内存区域（memory region）是符号化的左值。其出现的场景，例如分析指针的符号值时：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> Expr *E = <span class="comment">/* pointer expression*/</span>;</span><br><span class="line"><span class="type">const</span> MemRegion *Reg = State-&gt;<span class="built_in">getSVal</span>(E,LC).<span class="built_in">getAsRegion</span>();</span><br></pre></td></tr></table></figure>
+
+<p>内存区域也可以直接借助变量的声明来获得。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> VarDecl *D = <span class="comment">/* var decl */</span>;</span><br><span class="line"><span class="type">const</span> MemRegion *Reg = State-&gt;<span class="built_in">getSVal</span>(D,LC).<span class="built_in">getAsRegion</span>();</span><br></pre></td></tr></table></figure>
+
+<p>那上面两个例子中如果值并不是一个内存区域则函数调用会返回一个空指针。</p>
+<p>内存区域可以包含符号值; 获取这些值可能需要将内存区域作为指针来解引用。 解内存区域引用的机制称为区域存储（Region Store）。 每个<code>ProgramState</code>包含存储的一个实例，它携带已知的符号值到内存区域的对应关系。</p>
+<p>从Program State获取region binding的方法很简单：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SVal Val = State-&gt;<span class="built_in">getSVal</span>(Reg);</span><br></pre></td></tr></table></figure>
+
+<p>与Environment不同，Region Store会在没有binding的时候尝试生成一个合理的binding。 在这种情况下，它将构造并返回一个表示该区域未知值的符号。 这意味着你总是可以依赖<code>getSVal (const MemRegion *)</code>来产生一个合理的符号值。  </p>
+<h5 id="4-1-3-迭代访问Region-Store-Binding"><a href="#4-1-3-迭代访问Region-Store-Binding" class="headerlink" title="4.1.3 迭代访问Region Store Binding"></a>4.1.3 迭代访问Region Store Binding</h5><p>使用region store的最常用操作是获取其中特定memory region的binding。不过有的时候也许你希望列出所有的显式binding。在<code>StoreManager</code>类（它持有所有region store实例）中，有一个名叫<code>BindingHandler</code>的机制可以迭代访问特定program state中的所有binding。</p>
+<p>为了使用binding handler，你需要继承它：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Callback</span> : <span class="keyword">public</span> StoreManager::BindingHandler&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">HandleBinding</span><span class="params">(StoreManager &amp;SM, Store St,</span></span></span><br><span class="line"><span class="params"><span class="function">                      <span class="type">const</span> MemRegion *Region, SVal Val)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>任何时候需要停止迭代的话，就把这个布尔值返回false。一旦已经定义了这个回调函数，你就可以开始迭代：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CallBack CB;</span><br><span class="line">StoreManager &amp;SM = C.<span class="built_in">getStoreManager</span>();</span><br><span class="line">SM.<span class="built_in">iterBindings</span>(State-&gt;<span class="built_in">getStore</span>(),CB);</span><br></pre></td></tr></table></figure>
+
+<h5 id="4-1-4-对符号值的假设"><a href="#4-1-4-对符号值的假设" class="headerlink" title="4.1.4 对符号值的假设"></a>4.1.4 对符号值的假设</h5><p>对于一个程序状态而言，你可以从中获得任意一个符号值或者做出一个关于它的布尔条件假设。也就是说它代表一个true或者一个false。为了检验假设，这个值本身要么已被定义的，要么是unknown。未定义的值是不能被检验的。一旦你确定这个值不是未定义的，你就可以使用program state的assume方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">SVal Val = <span class="comment">/* a certain symbolic value */</span>;</span><br><span class="line">Option&lt;DefinedOrUnknownSVal&gt; DVal = Val.<span class="built_in">getAs</span>&lt;DefinedOrUnknownSVal&gt;();</span><br><span class="line"><span class="keyword">if</span>(!DVal) </span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line"><span class="keyword">if</span>(State-&gt;<span class="built_in">assume</span>(*Dval, <span class="literal">true</span>))&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span>(State-&gt;<span class="built_in">assume</span>(*Dval, <span class="literal">false</span>))&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>需要注意的是，如果这个值并不确定是true还是false，两个statement都可以触发。</p>
+<h5 id="4-1-5-符号值上的操作"><a href="#4-1-5-符号值上的操作" class="headerlink" title="4.1.5 符号值上的操作"></a>4.1.5 符号值上的操作</h5><p>假定你有一个符号值a和一个符号之b，你希望假定a比b大。为了做这个操作，你需要表示a大于b，作为一个新的符号值（或者说是一个布尔类型）c。你可以使用<code>SValBuilder</code>来创建一个新的符号值：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SVal A,B;</span><br><span class="line">ASTContext &amp;Ctx= C.<span class="built_in">getASTContext</span>();</span><br><span class="line">SValBuilder &amp;SVB = C.<span class="built_in">getSValBuilder</span>();</span><br><span class="line">SVal C = SVB.<span class="built_in">evalBinOp</span>(State,BO_GT, A,B,&amp;Ctx.BoolTy);</span><br></pre></td></tr></table></figure>
+
+<h5 id="4-1-6-使用污染分析"><a href="#4-1-6-使用污染分析" class="headerlink" title="4.1.6 使用污染分析"></a>4.1.6 使用污染分析</h5><p>如果一个符号值的获取，借助了一些不可信的来源，例如阅读标准输入或者文件描述符，乃至于一些环境变量，那么这个符号值会称之为<strong>被污染</strong>。污染分析是一种有效的寻找安全缺陷的方法。例如基于敏感函数中受污染值的调用而检测SQL注入。</p>
+<p>在一个特定的程序状态中，你永远可以确定一个特定的符号值是否被污染：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ProgramStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">SVal Val = <span class="comment">/* a certain synbolic value*/</span>;</span><br><span class="line"><span class="keyword">if</span>(State-&gt;<span class="built_in">isTainted</span>(Val))&#123;</span><br><span class="line"> <span class="comment">/* ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>大多数污染信息来自于默认内建于CSA的checker，最典型的比如<code>alpha.security.taint.TaintPropagation</code>。如果你希望自己定义污染来源或者说扩展污染分析可以看4.2.4。</p>
+<h4 id="4-2-改变和分割程序状态"><a href="#4-2-改变和分割程序状态" class="headerlink" title="4.2 改变和分割程序状态"></a>4.2 改变和分割程序状态</h4><p>路径敏感的checker不止观察分析器内核对程序的符号执行，也会主动参与对程序行为的建模。切口会主动把它的特性加到程序状态中修改region store binding。或者range constraints乃至于切分程序状态。也就是说一个特定的行为如果可能有多个不同的结果，那么就会让程序采取不同的执行路径。</p>
+<p>记得注意的是切分程序状态必须十分小心，因为每一次切分都会使得学习期内和对于当前剩余爆炸图子树的总工作量加倍。如果切分的次数非常多，分析的速度会被极大程度地降低。</p>
+<h5 id="4-2-1-向爆炸图增加边"><a href="#4-2-1-向爆炸图增加边" class="headerlink" title="4.2.1 向爆炸图增加边"></a>4.2.1 向爆炸图增加边</h5><p>正如在2.3节所说的那样，路径敏感的分析器引擎使用图的形式来表示分析的过程，称之为爆炸图。在图中的节点。我们称为爆炸节点。被定义为一个程序点（一个控制流图中的单一元素被以一个程序点的形式表示。或者如果（有必要的话）不止一个）和一个程序状态的有序对。每一个statement会让我们从一个现有的节点到达另一个新创建的节点，或者（如果它此时的行为有很多种，那么有可能）到很多个节点。</p>
+<p>实际上爆炸图并不一定是一棵树，它有可能有环。任何时候当到达一个相同的程序点时具有相同程序状态，一个环就产生了。于是对于这条分支的分析会自动停止：因为这很可能发生了一次死循环，或者时一个checker中的bug。</p>
+<p>不可以修改任何已经存在的爆炸图节点（nodes），程序点（points）或者程序状态（states），它们是不可修改的，你所有可以做的事情是：制造一个新的程序状态。或者一个新的附属程序点，也许两者都有；然后使用<code>CheckerContext</code>对象来增加一条转换边（transition）。</p>
+<p>修改一个程序状态的某方面属性的代码长这样：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ProgarmStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">State = <span class="built_in">modifyState</span>(State); <span class="comment">// do stuff</span></span><br><span class="line">C.<span class="built_in">addTransition</span>(State);</span><br></pre></td></tr></table></figure>
+
+<p>如果你希望增加多条转向不同的节点的转换边，你可能会想做这样的事情：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ProgarmStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">ProgarmStateRef State1 = <span class="built_in">modifyState</span>(State);</span><br><span class="line">ProgarmStateRef State2 = <span class="built_in">modifyState</span>(State);</span><br><span class="line">C.<span class="built_in">addTransition</span>(State1);</span><br><span class="line">C.<span class="built_in">addTransition</span>(State2);</span><br></pre></td></tr></table></figure>
+
+<p>你可能并不希望是并行的多条，而是一系列顺序的转换，那么你可以使用这个接受一个前驱节点作为参数的重载方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ProgarmStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">State = <span class="built_in">modifyState</span>(State); <span class="comment">// do stuff</span></span><br><span class="line">ExplodeNode *N = C.<span class="built_in">addTransition</span>(State);</span><br><span class="line">State = <span class="built_in">modifyState</span>(State, N);</span><br><span class="line">C.<span class="built_in">addTransition</span>(State,N);</span><br></pre></td></tr></table></figure>
+
+<h5 id="4-2-2-切分范围约束假设的状态"><a href="#4-2-2-切分范围约束假设的状态" class="headerlink" title="4.2.2 切分范围约束假设的状态"></a>4.2.2 切分范围约束假设的状态</h5><p>在4.1.4节所描述的assume方法。会返回一个带有添加的假设的新的程序状态；或者如果假设无法被满足，那么是一个空的程序状态。我们可以做的并不只是把它转换成布尔值来看条件是否可以被满足，也可以添加转换边来转到新创建的状态。</p>
+<p>举例来说，如果你的checker需要告诉分析器一个特定的函数不能返回零，你可以假定它的返回值的符号值是非零的，然后添加一个函数调用后的假定状态的转换边：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">SVal Val = Call.<span class="built_in">getReturnValue</span> ();</span><br><span class="line">Optional &lt;DefinedOrUnknownSVal &gt; DVal = Val.getAs &lt;<span class="built_in">DefinedOrUnknownSVal</span> (); </span><br><span class="line"><span class="keyword">if</span> (!DVal) <span class="keyword">return</span>;</span><br><span class="line">ProgramStateRef State = C.<span class="built_in">getState</span> ();</span><br><span class="line">State = State -&gt;<span class="built_in">assume</span> (*DVal , <span class="literal">true</span>);</span><br><span class="line">C.<span class="built_in">addTransition</span>(State);</span><br></pre></td></tr></table></figure>
+
+<p>在对应的转换之后，分析器就知道在这之后所有剩下的执行路径中，这个值是非零的。</p>
+<p>有的时候你可能会增加并行的转换，然后转向一条true和一条false，这样做的好处是什么呢？实际上符号执行的整个核心想法就是状态切分。你所做的事情和分析器在遇到一个if语句的时候所做的完全一致：其考虑一个单一的分支而缺乏有效信息，不如考虑两条分支，在每一条上都有一些事情是已知的。这意味着如果一个checker需要知道，比如说这个值是不是零，来汇报缺陷。这种情况下，checker就会知道其中一条分支上发生了缺陷。如果没有状态切分的话，checker是保持沉默的，不能判断在程序路径上一定会存在一些缺陷。</p>
+<h5 id="4-2-3-创造region-store-binding"><a href="#4-2-3-创造region-store-binding" class="headerlink" title="4.2.3 创造region store binding"></a>4.2.3 创造region store binding</h5><p>有的时候你可能希望修改程序状态来把一个特定的符号值绑定到一个位置上。一个典型的使用情景是手动模拟一个分析器不能建模的函数。举例来说，一个特定函数的代源代码是不可达的；你可以把你对于它的理解刻画到checker中，并试图模拟这种行为。然后如果你知道这个函数会把一个特定的符号值写到一个特定的位置。你可以告诉checker来这样建模它：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ProgramStateRef State = C.<span class="built_in">getState</span> ();</span><br><span class="line">SVal Loc = <span class="comment">/* Obtain a location */</span>;</span><br><span class="line">SVal Val = <span class="comment">/* Obtain a value */</span>;</span><br><span class="line">State = State -&gt;<span class="built_in">bindLoc</span>(Loc , Val);</span><br><span class="line">C.<span class="built_in">addTransition</span>(State);	</span><br></pre></td></tr></table></figure>
+
+<h5 id="4-2-4-扩展污染分析"><a href="#4-2-4-扩展污染分析" class="headerlink" title="4.2.4 扩展污染分析"></a>4.2.4 扩展污染分析</h5><p>为了让污染分析有效，分析器需要知道哪些事件会污染符号值，以及污染会借助什么样的事件扩散到其它的符号值上。这两个事情都可以借助checker来扩展。</p>
+<p>对于扩展污染来源而言，订阅任何匹配所需事件的checker回调函数，并使用<code>ProgramState</code>的<code>addTaint(...)</code>方法。这个方法有三个重载，允许我们把污染加到不同类的符号值上。  </p>
+<p>把污染加到当前环境中的表达式上的方法是这样的：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LocationContext *LC = C.<span class="built_in">getLocationContext</span>();</span><br><span class="line">ProgramStateRef State = C.<span class="built_in">getState</span> ();</span><br><span class="line"><span class="type">const</span> Expr *E = <span class="comment">/* Obtain an expression value of which is untrusted */</span>; ProgramStateRef NewState = State -&gt;<span class="built_in">addTaint</span>(E, LC); </span><br><span class="line"><span class="keyword">if</span> (NewState != State) <span class="comment">// avoid loops in the exploded graph</span></span><br><span class="line">    C.<span class="built_in">addTransition</span>(NewState);</span><br></pre></td></tr></table></figure>
+
+<p>对于数字值而言：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ProgramStateRef State = C.<span class="built_in">getState</span> ();</span><br><span class="line">SVal V = <span class="comment">/* Obtain a numeric symbol from an untrusted source */</span>; </span><br><span class="line"><span class="keyword">if</span> (SymbolRef Sym = V.<span class="built_in">getAsSymbol</span> ()) &#123;</span><br><span class="line">    ProgramStateRef NewState = State -&gt;<span class="built_in">addTaint</span>(Sym);</span><br><span class="line">    <span class="keyword">if</span> (NewState != State) </span><br><span class="line">        C.<span class="built_in">addTransition</span>(NewState );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对于指向不信任数据的指针而言：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ProgramStateRef State = C.<span class="built_in">getState</span> ();</span><br><span class="line">SVal V = <span class="comment">/* Obtain a symbolic location from an untrusted source */</span>; ProgramStateRef NewState = State -&gt;<span class="built_in">addTaint</span>(V.<span class="built_in">getAsRegion</span>()); </span><br><span class="line"><span class="keyword">if</span> (NewState != State)</span><br><span class="line">	C.<span class="built_in">addTransition</span>(NewState);</span><br></pre></td></tr></table></figure>
+
+<p>要注意的是，你不能对具体值做污染标记。比如说一个代表着32位的有符号整数”0“的符号值不可以被标记为被污染的。事实上，分析器甚至不会区分不同的”0“的实例。</p>
+<p>默认规则是：如果一个特定的符号值被标记为被污染，那么基于它的算数运算的结果也会被标记为被污染，如果一个区域被标记为污染那么所有从中产生的值也被标记为污染。不过，如果一个不相关的值被写入了一块污染区域，这个值不会被考虑为被污染。除此之外，具有被污染的符号值数组下标的数组成员元素也会默认被标记为污染。</p>
+<p>不过，很多复杂的事情可能会发生。举例来说，它有可能被传入了一个返回另一符号值的函数。或者也许这个函数并不能被内核所建模，那么你就需要手动扩展污染的扩散规则：捕捉到你认为导致污染扩散的事件，检测是否被污染，然后把污染加到因为你认为已被扩散到的值上。</p>
+<p>正如在4.1.6节中所说，大多数通常意义上的污染源和扩散规则已经在内置的checker中定义。其中也包含了很多关于污染的例子。对于你自己的checker来说，添加自己的污染源和扩散规则也许是有必要的。</p>
+<p>想知道哪些特定种类的符号值可以携带污染以及为什么它们可以，请看5.6。</p>
+<h5 id="4-2-5-使用程序状态中的特性"><a href="#4-2-5-使用程序状态中的特性" class="headerlink" title="4.2.5 使用程序状态中的特性"></a>4.2.5 使用程序状态中的特性</h5><p>Checker可以按它们自己想要的往程序状态中增加特征（trait)，这些特征被保存在一个特定的结构中，称之为generic data map(GDM)。</p>
+<p>使用自定义的程序特征的最主要情景是检查由一系列（而不是单一）的事件触发的错误。一个非常典型的例子是多次释放：当同一个对象被多次回收的时候是错误的，但任何一次单一的回收行为本身并不是一次错误。为了创造一个checker来处理对应的情况。通常的做法是创建一个从符号值标识符到它们的状态（unknown&#x2F;live&#x2F;deleted）的映射关系，使用GDM来保存这个映射关系。于是检查的特征就可以称之为：正在回收一个已被标记为已回收的对象。</p>
+<p>一个新手checker撰写者所常犯的错误是把这个映射关系保存在checker自己的类域中。这也正是为什么所有checker的回调函数被使用const修饰的原因：一般来说很少有情况，你需要往checker的state中存储任何东西。绝大多数情况下，checker是与state无关的。在整个分析过程中，这些引擎从一个分支跳到另一个分支是非常正常的一件事情。但是在一个分支上某对象被标记为已回收，并不意味着在其它程序执行路径的分支上也是这样标记的。这正说明了checker中的成员变量，并不是一个合适的存放关于程序状态信息的地方，因为它对于所有的分支都是一致的。只有程序状态本身适合存放。</p>
+<p>和程序状态本身一样，GDM也是不可修改的。这也正说明了，想要在GDM里面保存一些数据，你需要使用LLVM的不可变容器：<code>llvm::ImmutableList, llvm::ImmutableSet, llvm::ImmutableMap </code>。否则性能会下降的非常严重，因为程序状态会被复制过多次。</p>
+<p>想要在程序状态中插入一个特征，需要在你checker代码的全局范围内（而非某命名空间中，也不能是多个TU都可以接触到的地方）使用四个预定义宏中的一个：</p>
+<ul>
+<li><code>REGISTER_TRAIT_WITH_PROGRAMSTATE(TraitName, Type)</code><br>这个宏可以让程序状态携带一个类型为Type的特征。你可以使用<code>State-&gt;get&lt;TraitName&gt;()</code>来获取这个特征，并得到它当前状态中的值；或者借助<code>State-&gt;set&lt;TraitName&gt;(NewValue)</code>来获取一个新的带特征的特征状态。此外，<code>TraitNameTy</code>和<code>Type</code>是同义的。</li>
+<li><code>REGISTER_LIST_WITH_PROGRAMSTATE(ListName , ElementType)</code><br>特征类型为LLVM的不可变列表，其中的元素类型是<code>ElementType</code>。你可以通过<code>State-&gt;add&lt;ListName&gt;(NewItem)</code>来扩展，或者使用<code>State-&gt;scan&lt;ListName&gt;(NewItem)</code>来检查。</li>
+<li><code>REGISTER_SET_WITH_PROGRAMSTATE(SetName , ElementType)</code><br>特征类型为LLVM的不可变集合，其中的元素类型是<code>ElementType</code>。集合支持<code>add&lt;&gt;()</code>和<code>contains&lt;&gt;()</code>，也支持<code>remove&lt;&gt;()</code></li>
+<li><code>REGISTER_MAP_WITH_PROGRAMSTATE(MapName , KeyType , ValueType)</code><br>顾名思义。它支持<code>remove&lt;&gt;()</code>，但是不支持<code>add&lt;&gt;()</code>。不过，<code>get&lt;&gt;()</code>和<code>set&lt;&gt;()</code>是很方便的。</li>
+</ul>
+<p>如果<code>Type, ElementType, KeyType, ValueType</code>中的任何一个不是一个整型或指针类型，那么这些类型在运行时需要满足一些条件。具体来说，为了可以作为不可变容器的成员元素，它们需要提供一个<code>Profile()</code>方法，来让LLVM可以把它们当作折叠集(folding set)中的节点。</p>
+<p>例如，你不能直接把<code>std::string</code>或者<code>llvm::StringRef</code>放进去，你需要做一些包装：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">StringWrapper</span> &#123; </span><br><span class="line">    <span class="type">const</span> std:: string Str;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">StringWrapper</span>(<span class="type">const</span> std:: string &amp;S) : <span class="built_in">Str</span>(S) &#123;&#125;</span><br><span class="line">    <span class="type">const</span> std:: <span class="function">string &amp;<span class="title">get</span><span class="params">()</span> <span class="type">const</span> </span>&#123; <span class="keyword">return</span> Str; &#125; </span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Profile</span><span class="params">(llvm:: FoldingSetNodeID &amp;ID)</span> <span class="type">const</span> </span>&#123; ID.<span class="built_in">AddString</span>(Str);&#125; </span><br><span class="line">    <span class="type">bool</span> <span class="keyword">operator</span> ==( <span class="type">const</span> StringWrapper &amp;RHS) <span class="type">const</span> &#123; <span class="keyword">return</span> Str == RHS.Str; &#125; </span><br><span class="line">    <span class="type">bool</span> <span class="keyword">operator</span> &lt;( <span class="type">const</span> StringWrapper &amp;RHS) <span class="type">const</span> &#123; <span class="keyword">return</span> Str &lt; RHS.Str; &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>然后这样使用：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">REGISTER_SET_WITH_PROGRAMSTATE</span>(MyStringSet, StringWrapper)</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">MyChecker::checkPreCall</span><span class="params">(<span class="type">const</span> CallEvent &amp;Call, CheckerContext &amp;C)</span> </span>&#123;</span><br><span class="line">  ProgramStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">  <span class="keyword">if</span> (<span class="type">const</span> IdentifierInfo *II = Call.<span class="built_in">getCalleeIdentifier</span>()) &#123;</span><br><span class="line">    std::string Str = II-&gt;<span class="built_in">getName</span>();</span><br><span class="line">    State = State-&gt;<span class="built_in">add</span>&lt;MyStringSet&gt;(<span class="built_in">StringWrapper</span>(Str));</span><br><span class="line">    C.<span class="built_in">addTransition</span>(State);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (State-&gt;<span class="built_in">contains</span>&lt;MyStringSet&gt;(<span class="built_in">StringWrapper</span>(<span class="string">&quot;main&quot;</span>))) &#123; </span><br><span class="line">      <span class="comment">/* ... */</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>值得一提的是<code>Sval</code>类型它自己的profile方法。如果你希望保存一个复杂结构，可以这样实现它的profile方法，填充其中的所有域：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> MyStructure :: <span class="built_in">Profile</span>(llvm:: FoldingSetNodeID &amp;ID) <span class="type">const</span> &#123; </span><br><span class="line">    ID.<span class="built_in">AddPointer</span>(Sym); </span><br><span class="line">    Val.<span class="built_in">Profile</span>(ID);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-3-路径敏感checker的回调函数"><a href="#4-3-路径敏感checker的回调函数" class="headerlink" title="4.3 路径敏感checker的回调函数"></a>4.3 路径敏感checker的回调函数</h4><p>路径敏感的checker通过繁多的checker回调函数持续与分析器内核交互。不同的回调函数由不同的事件触发。这一节主要介绍各个回调函数。</p>
+<h4 id="4-3-1-check-PreStmt-lt-T-gt"><a href="#4-3-1-check-PreStmt-lt-T-gt" class="headerlink" title="4.3.1 check::PreStmt&lt;T&gt;"></a>4.3.1 <code>check::PreStmt&lt;T&gt;</code></h4><p>原型为：<code>void checkPreStmt(const T *S, CheckerContext &amp;C) const;</code></p>
+<p>这是一个注册于AST上类型为T的statement的Check他会在每一次遇到一个类型为T的statement的时候触发。在这个回调函数中，你可以获得T的子statement的值。</p>
+<p>这个回调函数不会在控制流语句上生效（例如if）。如果需要检查这样的语句，请订阅<code>check::BranchCondition</code>。</p>
+<p>使用这个回调函数的例子，可以参照<code>core.DivideZero</code>：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">DivZeroChecker::checkPreStmt</span><span class="params">(<span class="type">const</span> BinaryOperator *B, CheckerContext &amp;C)</span> <span class="type">const</span></span>&#123;</span><br><span class="line">    BinaryOperator::Opcode Op = B-&gt;<span class="built_in">getOpcode</span>();</span><br><span class="line">    SVal Denom = C.<span class="built_in">getState</span>()-&gt;<span class="built_in">getSVal</span>(B-&gt;<span class="built_in">getRHS</span>(),C.<span class="built_in">getLocationContext</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个切克使用了binary operator作为类的特化参数，订阅了每一个被建模的二元运算符。然后就在第三行，他检查了究竟是哪一个操作运算符被建模了；因为他只需要关注除法。然后在第五行他获得了被除数的符号值。</p>
+<h5 id="4-3-2-check-PostStmt-lt-T-gt"><a href="#4-3-2-check-PostStmt-lt-T-gt" class="headerlink" title="4.3.2 check::PostStmt&lt;T&gt;"></a>4.3.2 <code>check::PostStmt&lt;T&gt;</code></h5><p><code>void checkPostStmt(const T *S, CheckerContext &amp;C) const;</code></p>
+<p>这个回调函数模板和前一个很像，唯一的区别是它会在这个statement被建模之后才触发。如果S是一个表达式，那么它可以获得S本身的符号值；但是S中所有子表达式的符号值已经被删除了。</p>
+<p>一个使用这个checker的好的例子可以看<code>unix.Malloc</code> checker。他会寻找关于内存的问题，比如内存泄露或者多次释放。他订阅了<code>CXXNewExpr</code>来追踪使用new分配内存的指针的符号值。</p>
+<h5 id="4-3-3-check-PreCall"><a href="#4-3-3-check-PreCall" class="headerlink" title="4.3.3 check::PreCall"></a>4.3.3 <code>check::PreCall</code></h5><p><code>void checkPreCall(const CallEvent &amp;Call, CheckerContext &amp;C) const;</code></p>
+<p>这个方便的回调函数只是<code>check::PreStmt&lt;CallExpr&gt;</code>的一个更方便的版本。 它会在调用执行之前的同一时刻触发，不管它是否会被”过程间分析引擎”处理。 区别在于<code>check::PreCall</code>中你拥有<code>CallEvent</code>的结构，从这个结构中你可以很容易地获得被调用对象的符号值，所有的参数，以及c++隐含的this参数。  </p>
+<p>在这个回调中，通常会尝试找出被调用的函数。 最简单的方法是获取被调用标识符的名称，并将其与给定的字符串进行比较。 然而，字符串比较是一个复杂的操作。更快捷的方法是存储我们想要的函数的标识符，然后比较标识符指针。  </p>
+<p>我们已经看到在<code>alpha.core.MainCallChecker</code>中使用<code>check::PreCall</code>。 你也可以在默认的CSA发行版的<code>alpha.unix.SimpleStreamChecker</code>中找到<code>check::PreCall</code>的使用示例。  </p>
+<p>首先，让我们看看它是如何获取标识符指针以实现更快的函数查找的:  </p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">SimpleStreamChecker::initIdentifierInfo</span><span class="params">(ASTContext &amp;ACtx)</span> <span class="type">const</span> </span>&#123; </span><br><span class="line"><span class="keyword">if</span> (IIfclose)</span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">IIfclose = &amp;Ctx.Idents.<span class="built_in">get</span>(<span class="string">&quot;fclose&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ASTContext.Idents</code>是当前TU的标识符表。你可以在通过名字查到标识符，然后存储起来供自己快速查询。</p>
+<p>这个回调函数使用了CallEvent来迅速判断被调用的函数是不是我们在查找的那个，并在此基础上做了检查：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">SimpleStreamChecker::checkPreCall</span><span class="params">(<span class="type">const</span> CallEvent &amp;Call,CheckerContext &amp;C)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  <span class="built_in">initIdentifierInfo</span>(C.<span class="built_in">getASTContext</span>());</span><br><span class="line">  <span class="keyword">if</span> (!Call.<span class="built_in">isGlobalCFunction</span>())</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  <span class="keyword">if</span> (Call.<span class="built_in">getCalleeIdentifier</span>() != IIfclose)</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  <span class="keyword">if</span> (Call.<span class="built_in">getNumArgs</span>() != <span class="number">1</span>)</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  SymbolRef FileDesc = Call.<span class="built_in">getArgSVal</span>(<span class="number">0</span>).<span class="built_in">getAsSymbol</span>(); <span class="comment">/* ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="4-3-4-check-PostCall"><a href="#4-3-4-check-PostCall" class="headerlink" title="4.3.4 check::PostCall"></a>4.3.4 <code>check::PostCall</code></h5><p><code>void checkPostCall(const CallEvent &amp;Call, CheckerContext &amp;C) const;</code></p>
+<p>类似于<code>check::PreCall</code>，这是<code>check::PostStmt&lt;CallExpr&gt;</code>的快捷回调，其中<code>CallEvent</code>结构是可用的。 它在任何函数调用之后立即触发。 你可以通过<code>call.getReturnValue()</code>获得计算出来的返回值。  </p>
+<p>使用技巧与<code>check::PreCall</code>非常相似，这些回调通常是成对使用的。 例如<code>alpha.unix. SimpleStreamChecker</code>使用<code>check::PreCall</code> 来处理<code>fclose()</code>调用(需要访问参数)和<code>check::PostCall</code>来处理<code>fopen()</code>(需要访问返回值)。 同样<code>unix.Malloc</code>checker在<code>check::PostCall</code>回调中捕获<code>malloc()</code>，并使用<code>check::PreCall</code>来跟踪之后的<code>free()</code> 。</p>
+<h5 id="4-3-5-check-Location"><a href="#4-3-5-check-Location" class="headerlink" title="4.3.5 check::Location"></a>4.3.5 <code>check::Location</code></h5><p><code>void checkLocation(SVal L, bool IsLoad , const Stmt* S, CheckerContext &amp;C) const;</code></p>
+<p>每当被分析的程序寻址到一个特定的内存位置时，这个回调就会被触发，无论是为了从它读取一个值，还是为了向它写入一个值。 符号值L是要检查的左值(一般来说是一个内存区域)，只要对L的访问是只读的，<code>IsLoad</code>就被置位。 值L是描述语句S的。如果你想获得被访问的语句本身，需要查看它的父语句，可能通过使用<code>ParentMap</code>。此外，<code>CheckerContext</code>和往常一样是可以用的。</p>
+<p>当对验证位置而不是值感兴趣时，即当访问位置是感兴趣的“那个”事件时，使用这个回调。<code>core.NullDereference</code>给出了一个很好的使用示例，通过订阅<code>check::Location</code>来检测未定义的或空指针位置值：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">DereferenceChecker::checkLocation</span><span class="params">(SVal L, <span class="type">bool</span> IsLoad, <span class="type">const</span> Stmt *S,</span></span></span><br><span class="line"><span class="params"><span class="function">                                       CheckerContext &amp;C)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Check for dereference of an undefined value.</span></span><br><span class="line">  <span class="keyword">if</span> (L.<span class="built_in">isUndef</span>()) &#123;</span><br><span class="line">    <span class="keyword">if</span> (ExplodedNode *N = C.<span class="built_in">generateSink</span>()) &#123;</span><br><span class="line">      <span class="comment">/* ... */</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  DefinedOrUnknownSVal Location = L.<span class="built_in">castAs</span>&lt;DefinedOrUnknownSVal&gt;(); <span class="comment">// Check for null dereferences.</span></span><br><span class="line">  <span class="keyword">if</span> (!Location.<span class="built_in">getAs</span>&lt;Loc&gt;())</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  ProgramStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">  ProgramStateRef NotNullState, NullState;</span><br><span class="line">  llvm::<span class="built_in">tie</span>(NotNullState, NullState) = State-&gt;<span class="built_in">assume</span>(Location);</span><br><span class="line">  <span class="keyword">if</span> (NullState) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!NotNullState) &#123; <span class="comment">/* ... */</span></span><br><span class="line">    &#125;                    <span class="comment">/* ... */</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">/* ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在上面的代码中，checker实现了各种各样的测试，以探索位置值是什么样的，并据此产生不同类型的警告。你可以看到它如何首先检测未定义的位置值(捕获<code>UndefinedVal</code>)，然后尝试假设该位置在当前程序状态下为空或非空，并基于此做出决策。 checker左了程序状态分割，以便在空和非空位置之间进行区分(如果这两种变量都是可能的)。  </p>
+<h5 id="4-3-6-check-Bind"><a href="#4-3-6-check-Bind" class="headerlink" title="4.3.6 check::Bind"></a>4.3.6 <code>check::Bind</code></h5><p><code>void checkBind(SVal L, SVal V, const Stmt *S, CheckerContext &amp;C) const;</code></p>
+<p>这个回调有点类似于<code>check::Location</code>。 每当一个值绑定到一个位置时，它就会被调用，位置和值分别作为符号值L和V可用。 与check::Location不同，check::Bind不会在Location被加载时被调用；而是只有当由于程序的写操作而出现区域绑定（region binding）时，才会调用它。  </p>
+<p>关于<code>check::Bind</code>的一个实际例子，你可以看<code>alpha.core.BoolAssignment</code>，它检查是否将0或1以外的值赋给布尔类型的变量：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">BoolAssignmentChecker::checkBind</span><span class="params">(SVal L, SVal V, <span class="type">const</span> Stmt *S,CheckerContext &amp;C)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    <span class="comment">// We are only interested in stores into Booleans.</span></span><br><span class="line">    <span class="type">const</span> TypedValueRegion *TR =</span><br><span class="line">        <span class="built_in">dyn_cast_or_null</span>&lt;TypedValueRegion&gt;(L.<span class="built_in">getAsRegion</span>());</span><br><span class="line">    <span class="keyword">if</span> (!TR)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    QualType valTy = TR-&gt;<span class="built_in">getValueType</span>();</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">isBooleanType</span>(valTy))</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    Optional&lt;DefinedSVal&gt; DV = V.<span class="built_in">getAs</span>&lt;DefinedSVal&gt;();</span><br><span class="line">    <span class="keyword">if</span> (!DV)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    ProgramStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">    SValBuilder &amp;SVB = C.<span class="built_in">getSValBuilder</span>();</span><br><span class="line">    DefinedSVal ZeroVal = SVB.<span class="built_in">makeIntVal</span>(<span class="number">0</span>, valTy);</span><br><span class="line">    SVal GreaterThanOrEqualToZeroVal = SVB.<span class="built_in">evalBinOp</span>(</span><br><span class="line">        State, BO_GE, *DV, ZeroVal, SVB.<span class="built_in">getConditionType</span>()); <span class="comment">/* ... */</span></span><br><span class="line">    DefinedSVal OneVal = SVB.<span class="built_in">makeIntVal</span>(<span class="number">1</span>, valTy);</span><br><span class="line">    SVal LessThanEqToOneVal =</span><br><span class="line">        SVB.<span class="built_in">evalBinOp</span>(State, BO_LE, *DV, OneVal, SVB.<span class="built_in">getConditionType</span>());</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该checker首先检查位置来查看该位置是否为布尔类型。 不是每个内存区域都有一个类型; 例如，任何空指针都指向一个特定的内存区域，但是checker不能负担起对存储在该区域的值的类型进行假设。 包含显式已知类型值的Region是<code>MemRegion</code>的子类，称为<code>TypedValueRegion</code>。 这里，除非L所指向的区域确实是布尔类型，否则checker就返回了（关于各种存储区域类型的详细讨论，请参见第5.2节）。然后checker继续计算值V是否等于0或1。 为此，它使用<code>SValBuilder</code>创建符号比较值，假设它们为真或假，并根据这些假设做出决策。  </p>
+<h5 id="4-3-7-check-EndAnalysis"><a href="#4-3-7-check-EndAnalysis" class="headerlink" title="4.3.7 check::EndAnalysis"></a>4.3.7 <code>check::EndAnalysis</code></h5><p><code>void checkEndAnalysis(ExplodedGraph &amp;G, BugReporter &amp;BR , ExprEngine &amp;Eng) const;</code></p>
+<p>每当路径敏感分析器完成对某个函数代码体的分析时，此回调将触发一次。  </p>
+<p>当函数体被完全分析完时，分析被重置(并调用<code>check::EndAnalysis</code>回调)。 因此，在分析一个翻译单元时，这个回调函数可能会被多次调用(换句话说，在Checker对象生存期期间，或者说，在clang运行期间，可能会被多次调用)。  </p>
+<p>此回调只对每个函数代码体触发一次，而不是对函数的每个分支触发一次。 这就是为什么<code>CheckerContext</code>在这个回调中不可用，并且你不能获得当前的<code>ProgramState</code>。 相反，你拥有可用的整个<code>ExplodedGraph</code>。 你还可以访问<code>BugReporter</code>来抛出错误报告，以及<code>ExprEngine</code>对象，它是分析器引擎的唯一实例。  </p>
+<p>当你想在整个分析过程中收集统计数据时，<code>check::EndAnalysis</code>是有用的。 使用<code>check::EndAnalysis</code>的一个极端例子是检查死代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">UnreachableCodeChecker::checkEndAnalysis</span><span class="params">(ExplodedGraph &amp;G, BugReporter &amp;BR,ExprEngine &amp;Eng)</span> <span class="type">const</span> </span>&#123; <span class="comment">/* ... */</span></span><br><span class="line">  <span class="keyword">if</span> (Eng.<span class="built_in">hasWorkRemaining</span>())</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  <span class="comment">/* ... */</span></span><br><span class="line">  <span class="keyword">for</span> (ExplodedGraph ::node_iterator I = G.<span class="built_in">nodes_begin</span>(), E = G.<span class="built_in">nodes_end</span>();</span><br><span class="line">       I != E; ++I) &#123;</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">/* ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个路径敏感的checker通过理解引擎在函数的符号执行期间执行了哪些路径来查找死代码。  </p>
+<p>有时函数会因为太复杂而被丢弃。在这种情况下，<code>hasWorkRemaining()</code>将返回true，并且checker将避免跳转到结论。 然后checker继续迭代，通过ExplodedGraph来查找到达了哪些CFG块。  </p>
+<h5 id="4-3-8-check-EndFunction"><a href="#4-3-8-check-EndFunction" class="headerlink" title="4.3.8 check::EndFunction"></a>4.3.8 <code>check::EndFunction</code></h5><p>每次分析器离开函数体时都会触发此回调。 与<code>check::EndAnalysis</code>不同，它触发函数的每一个可能的返回，以及程序执行的每一个分支。 此外，当过程间分析被启用时，这个回调不仅会在分析结束时触发，而且在内联函数调用的分析结束时也会触发。  </p>
+<p>考虑一个简单的例子：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">bar</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (b) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">foo</span>(a);</span><br><span class="line">    <span class="keyword">if</span> (c) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">(<span class="type">int</span> a)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (a) &#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这段代码中，<code>check::EndFunction</code>在顶部分析<code>foo()</code>时触发两次，在<code>bar()</code>调用<code>foo()</code>时触发四次，在<code>bar()</code>分析时触发八次，总共14次。相比之下，<code>check::EndAnalysis</code>会被<code>foo()</code>调用一次，<code>bar()</code>调用一次；<code>bar()</code>中调用<code>foo()</code>时它不会被调用。</p>
+<p>如果你想在分析结束时找出函数上下文的剩余内容，那么你一般会希望订阅<code>check::EndFunction</code>。 一个例子是<code>StackAddressEscape</code>checker。 该checker遍历所有区域存储绑定，以便在函数结束时找到存储在全局变量中的局部变量的指针：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">StackAddrEscapeChecker::checkEndFunction</span><span class="params">(CheckerContext &amp;C)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  <span class="keyword">class</span> <span class="title class_">CallBack</span> : <span class="keyword">public</span> StoreManager ::BindingsHandler &#123;</span><br><span class="line">  <span class="keyword">private</span>:</span><br><span class="line">    CheckerContext &amp;C;</span><br><span class="line">    <span class="type">const</span> StackFrameContext *CurSFC;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    SmallVector&lt;std::pair&lt;<span class="type">const</span> MemRegion *, <span class="type">const</span> MemRegion *&gt;, <span class="number">10</span>&gt; V;</span><br><span class="line">    <span class="built_in">CallBack</span>(CheckerContext &amp;CC)</span><br><span class="line">        : <span class="built_in">C</span>(CC), <span class="built_in">CurSFC</span>(CC.<span class="built_in">getLocationContext</span>()-&gt;<span class="built_in">getCurrentStackFrame</span>()) &#123;&#125;</span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">HandleBinding</span><span class="params">(StoreManager &amp;SMgr, Store Store, <span class="type">const</span> MemRegion *Region,</span></span></span><br><span class="line"><span class="params"><span class="function">                       SVal Val)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (!<span class="built_in">isa</span>&lt;GlobalsSpaceRegion&gt;(Region-&gt;<span class="built_in">getMemorySpace</span>()))</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">      <span class="type">const</span> MemRegion *VR = Val.<span class="built_in">getAsRegion</span>();</span><br><span class="line">      <span class="keyword">if</span> (!VR)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">/* ... */</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="type">const</span> StackSpaceRegion *SSR =</span><br><span class="line">              <span class="built_in">dyn_cast</span>&lt;StackSpaceRegion&gt;(VR-&gt;<span class="built_in">getMemorySpace</span>())) &#123;</span><br><span class="line">        <span class="keyword">if</span> (SSR-&gt;<span class="built_in">getStackFrame</span>() == CurSFC)</span><br><span class="line">          V.<span class="built_in">push_back</span>(std::<span class="built_in">make_pair</span>(Region, VR));</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line">  ProgramStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">  <span class="function">CallBack <span class="title">CB</span><span class="params">(C)</span></span>;</span><br><span class="line">  C.<span class="built_in">getStoreManager</span>().<span class="built_in">iterBindings</span>(State-&gt;<span class="built_in">getStore</span>(), CB);</span><br><span class="line">  <span class="comment">/* ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意StackFrameContext结构的用法。 通过比较当前堆栈帧和堆栈区域的堆栈帧，checker可以判断堆栈内存区域是属于相同的还是不同的堆栈帧。 当使用<code>check::EndFunction</code>回调函数时，你几乎总是需要找到当前的<code>stackframecontext</code>。  </p>
+<h5 id="4-3-9-check-BranchCondition"><a href="#4-3-9-check-BranchCondition" class="headerlink" title="4.3.9 check::BranchCondition"></a>4.3.9 <code>check::BranchCondition</code></h5><p><code>void checkBranchCondition(const Stmt *S, CheckerContext &amp;C) const;</code></p>
+<p>在程序分析期间发生的每个控制流分支上都会触发这个回调。 不像<code>check::PreStmt</code>和<code>check::PostStmt</code>回调会触发每个CFG基本块中的每条语句，<code>check::BranchCondition</code>会触发每个CFG终止符。 这些终止符可以包括if语句、条件循环，甚至逻辑操作中的短路。  </p>
+<p>如果想弄清楚程序使用什么来做出控制流决策，就订阅这个回调。例如，可以研究在环境中可用的条件的符号值的起源。  </p>
+<p>官方的<code>core.uninitialized.Branch</code>依赖于这个回调来查找依赖于未定义值的分支条件:  </p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> UndefBranchChecker :: <span class="built_in">checkBranchCondition</span>(<span class="type">const</span> Stmt *S, </span><br><span class="line">                                                CheckerContext &amp;C) <span class="type">const</span> &#123;</span><br><span class="line">    SVal Val = C.<span class="built_in">getState</span>()-&gt;<span class="built_in">getSVal</span>(S, C.<span class="built_in">getLocationContext</span> ()); </span><br><span class="line">    <span class="keyword">if</span> (Val.<span class="built_in">isUndef</span> ()) &#123;</span><br><span class="line">        <span class="comment">/* ... */</span> </span><br><span class="line">    &#125; </span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="4-3-10-check-LiveSymbols"><a href="#4-3-10-check-LiveSymbols" class="headerlink" title="4.3.10 check::LiveSymbols"></a>4.3.10 <code>check::LiveSymbols</code></h5><p><code>void checkLiveSymbols(ProgramStateRef State , SymbolReaper &amp;SR) const;</code></p>
+<p>此回调允许checker手动管理符号表达式范围约束的垃圾收集。 <code>SymbolReaper</code>对象负责符号的垃圾收集; 你还可以访问此回调中的当前程序状态。  </p>
+<p>大多数时候，除非你真的知道自己在做什么，否则这个回调只对元数据符号有用。<code>SymbolMetadata</code>是一种特殊的符号表达式，由checker本身创建和管理，这个回调对于管理这样的符号的生命周期是必要的。例如，<code>alpha.unix.cstring.OutofBounds</code>依赖这个回调函数来标记表示字符串长度的元数据符号:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> CStringChecker ::<span class="built_in">checkLiveSymbols</span>(ProgramStateRef State,</span><br><span class="line">                                       <span class="number">2</span> SymbolReaper &amp;SR) <span class="type">const</span> &#123;</span><br><span class="line">  CStringLengthTy Entries = State-&gt;<span class="built_in">get</span>&lt;CStringLength&gt;();</span><br><span class="line">  <span class="keyword">for</span> (CStringLengthTy ::iterator I = Entries.<span class="built_in">begin</span>(), E = Entries.<span class="built_in">end</span>();</span><br><span class="line">       I != E; ++I) &#123;</span><br><span class="line">    SVal Len = I.<span class="built_in">getData</span>();</span><br><span class="line">    <span class="keyword">for</span> (SymExpr ::symbol_iterator SI = Len.<span class="built_in">symbol_begin</span>(),</span><br><span class="line">                                   SE = Len.<span class="built_in">symbol_end</span>();</span><br><span class="line">         SI != SE; ++SI)</span><br><span class="line">      SR.<span class="built_in">markInUse</span>(*SI);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当字符串相同时，表示字符串长度的符号就是活的: 即使持有字符串的内存区域是相同的,把结束符改成一个非空字符(或在前面插入一个空字符)将改变c风格的字符串。于是长度和代表旧的符号长度不再是必要的,可以为垃圾收集被释放。  </p>
+<p>这并不意味着这个符号会立即被删除；例如，只要它仍然存储在区域存储中的另一个变量中，就不会删除它，即使checker释放了它。  </p>
+<p>元数据符号将在5.5.5中详细讨论。</p>
+<h5 id="4-3-11-check-DeadSymbols"><a href="#4-3-11-check-DeadSymbols" class="headerlink" title="4.3.11 check::DeadSymbols"></a>4.3.11 <code>check::DeadSymbols</code></h5><p><code>void checkDeadSymbols(SymbolReaper &amp;SymReaper , CheckerContext &amp;C) const;</code></p>
+<p>这个回调函数在符号被垃圾回收，而<code>check::LiveSymbols</code>没有阻止这一点时，被调用。</p>
+<p>在这个回调中，checker会收到通知，在进一步的分析过程中不会再次遇到这个符号，你可以停止在特定于checker的数据结构中跟踪它，典型的就是从程序状态中的GDM中删除符号信息。  </p>
+<p>这也意味着由符号表示的值不再存储在被分析的程序中的任何地方，这个值将永远丢失。例如，如果这个符号是一个已分配但在分析过程中没有释放的内存地址，那么这个符号的死亡就是一个内存泄漏：一旦这个符号死亡，程序就没有办法释放它。  </p>
+<p><code>alpha.unix.SimpleStream</code>使用<code>check::DeadSymbols</code>来清理GDM和查找文件描述符泄漏：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> SimpleStreamChecker ::<span class="built_in">checkDeadSymbols</span>(SymbolReaper &amp;SymReaper,CheckerContext &amp;C) <span class="type">const</span> &#123;</span><br><span class="line">    ProgramStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">    SymbolVector LeakedStreams;</span><br><span class="line">    StreamMapTy TrackedStreams = State-&gt;<span class="built_in">get</span>&lt;StreamMap&gt;();</span><br><span class="line">    <span class="keyword">for</span> (StreamMapTy ::iterator I = TrackedStreams.<span class="built_in">begin</span>(),</span><br><span class="line">         E = TrackedStreams.<span class="built_in">end</span>();</span><br><span class="line">         I != E; ++I) &#123;</span><br><span class="line">        SymbolRef Sym = I-&gt;first;</span><br><span class="line">        <span class="type">bool</span> IsSymDead = SymReaper.<span class="built_in">isDead</span>(Sym);</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">isLeaked</span>(Sym, I-&gt;second, IsSymDead, State))</span><br><span class="line">            LeakedStreams.<span class="built_in">push_back</span>(Sym);</span><br><span class="line">        <span class="keyword">if</span> (IsSymDead)</span><br><span class="line">            State = State-&gt;<span class="built_in">remove</span>&lt;StreamMap&gt;(Sym);</span><br><span class="line">    &#125;</span><br><span class="line">    ExplodedNode *N = C.<span class="built_in">addTransition</span>(State);</span><br><span class="line">    <span class="built_in">reportLeaks</span>(LeakedStreams, C, N);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h5 id="4-3-12-check-RegionChanges"><a href="#4-3-12-check-RegionChanges" class="headerlink" title="4.3.12 check::RegionChanges"></a>4.3.12 <code>check::RegionChanges</code></h5><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">wantsRegionChangeUpdate</span><span class="params">(ProgramStateRef State)</span> <span class="type">const</span></span>;</span><br><span class="line"><span class="function">ProgramStateRef <span class="title">checkRegionChanges</span><span class="params">(ProgramStateRef State, <span class="type">const</span> InvalidatedSymbols *Invalidated, ArrayRef &lt;<span class="type">const</span> MemRegion *&gt; ExplicitRegions, ArrayRef &lt;<span class="type">const</span> MemRegion *&gt; Regions,</span></span></span><br><span class="line"><span class="params"><span class="function">                                   <span class="type">const</span> CallEvent *Call)</span> <span class="type">const</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>这对回调函数监视区域存储中的所有更改。与<code>check:: bind::Location</code>不同，这个回调在失效时也会被调用，提供相关信息，比如可选调用事件。  </p>
+<p>如下表所示，与<code>check::Location</code>或<code>check::Bind</code>相比，<code>check::RegionChanges</code>调用的次数更多，从而确保对存储中的所有更改进行彻底监控。 此回调的调用代价也很高，因为将显示已更改符号和区域的完整列表。 这就是为什么应该定义一个辅助回调<code>wantsRegionChangeUpdate()</code>以优化调用<code>checkRegionChanges()</code>所需的工作。</p>
+<table>
+<thead>
+<tr>
+<th>事件</th>
+<th>Location</th>
+<th>Bind</th>
+<th>RegionChanges</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>从变量中读取</td>
+<td>√</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>赋值运算符</td>
+<td>√</td>
+<td>√</td>
+<td>√</td>
+</tr>
+<tr>
+<td>初始化</td>
+<td></td>
+<td>√</td>
+<td>√</td>
+</tr>
+<tr>
+<td>创建临时值</td>
+<td></td>
+<td></td>
+<td>√</td>
+</tr>
+<tr>
+<td>默认绑定</td>
+<td></td>
+<td></td>
+<td>√</td>
+</tr>
+<tr>
+<td>绑定被垃圾回收</td>
+<td></td>
+<td></td>
+<td>√</td>
+</tr>
+<tr>
+<td>无效化</td>
+<td></td>
+<td></td>
+<td>√</td>
+</tr>
+</tbody></table>
+<p>例如，在官方的<code>alpha.unix.cstring.OutOfBounds</code>checker中，每当checker在追踪一个至少一个Cstring的长度时，<code>RegionChangeUpdate()</code>返回true：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">REGISTER_MAP_WITH_PROGRAMSTATE</span>(CStringLength, <span class="type">const</span> MemRegion *, SVal)</span><br><span class="line"><span class="comment">/* ... */</span></span><br><span class="line"><span class="type">bool</span> CStringChecker ::<span class="built_in">wantsRegionChangeUpdate</span>(ProgramStateRef State) <span class="type">const</span> &#123;</span><br><span class="line">  CStringLengthTy Entries = State-&gt;<span class="built_in">get</span>&lt;CStringLength&gt;();</span><br><span class="line">  <span class="keyword">return</span> !Entries.<span class="built_in">isEmpty</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后，checker继续遍历Regions数组，以删除已更改区域及其子区域和超区域的字符串长度条目的入口：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">ProgramStateRef CStringChecker ::<span class="built_in">checkRegionChanges</span>(</span><br><span class="line">    ProgramStateRef State, <span class="type">const</span> InvalidatedSymbols *Invalidated,</span><br><span class="line">    ArrayRef&lt;<span class="type">const</span> MemRegion *&gt; ExplicitRegions,</span><br><span class="line">    ArrayRef&lt;<span class="type">const</span> MemRegion *&gt; Regions, <span class="type">const</span> CallEvent *Call) <span class="type">const</span> &#123;</span><br><span class="line">  llvm::SmallPtrSet&lt;<span class="type">const</span> MemRegion *, <span class="number">8</span>&gt; InvalidatedRegions;</span><br><span class="line">  llvm::SmallPtrSet&lt;<span class="type">const</span> MemRegion *, <span class="number">32</span>&gt; SuperRegions;</span><br><span class="line">  <span class="keyword">for</span> (ArrayRef&lt;<span class="type">const</span> MemRegion *&gt;::iterator I = Regions.<span class="built_in">begin</span>(),</span><br><span class="line">                                             E = Regions.<span class="built_in">end</span>();</span><br><span class="line">       I != E; ++I) &#123;</span><br><span class="line">    <span class="type">const</span> MemRegion *MR = *I;</span><br><span class="line">    InvalidatedRegions.<span class="built_in">insert</span>(MR);</span><br><span class="line">    SuperRegions.<span class="built_in">insert</span>(MR);</span><br><span class="line">    <span class="keyword">while</span> (<span class="type">const</span> SubRegion *SR = <span class="built_in">dyn_cast</span>&lt;SubRegion&gt;(MR)) &#123;</span><br><span class="line">      MR = SR-&gt;<span class="built_in">getSuperRegion</span>();</span><br><span class="line">      SuperRegions.<span class="built_in">insert</span>(MR);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  CStringLengthTy::Factory &amp;F = State-&gt;<span class="built_in">get_context</span>&lt;CStringLength&gt;();</span><br><span class="line">  <span class="keyword">for</span> (CStringLengthTy ::iterator I = Entries.<span class="built_in">begin</span>(), E = Entries.<span class="built_in">end</span>();</span><br><span class="line">       I != E; ++I) &#123;</span><br><span class="line">    <span class="type">const</span> MemRegion *MR = I.<span class="built_in">getKey</span>();</span><br><span class="line">    <span class="keyword">if</span> (SuperRegions.<span class="built_in">count</span>(MR)) &#123;</span><br><span class="line">      Entries = F.<span class="built_in">remove</span>(Entries, MR);</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">const</span> MemRegion *Super = MR;</span><br><span class="line">    <span class="keyword">while</span> (<span class="type">const</span> SubRegion *SR = <span class="built_in">dyn_cast</span>&lt;SubRegion&gt;(Super)) &#123;</span><br><span class="line">      Super = SR-&gt;<span class="built_in">getSuperRegion</span>();</span><br><span class="line">      <span class="keyword">if</span> (InvalidatedRegions.<span class="built_in">count</span>(Super)) &#123;</span><br><span class="line">        Entries = F.<span class="built_in">remove</span>(Entries, MR);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> State-&gt;<span class="built_in">set</span>&lt;CStringLength&gt;(Entries);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>为了获得更好的性能，无效区域的超区域被存储在<code>llvm::SmallPtrSet</code>中，这对于子区域当然是有问题的。 还要注意checker是如何避免为每个区域删除创建多个中间程序状态，而是直接在不可变map上工作的。</p>
+<h5 id="4-3-13-check-PointerEscape"><a href="#4-3-13-check-PointerEscape" class="headerlink" title="4.3.13 check::PointerEscape"></a>4.3.13 <code>check::PointerEscape</code></h5><p><code>ProgramStateRef c hec kP oi nte rE sc ape ( ProgramStateRef State , const In val id at edS ym bo ls &amp; Escaped , const CallEvent * Call , Point erEscape Kind Kind ) const ;</code></p>
+<p>每当一个指针值被赋给一个全局变量，或者传递给一个分析程序不能建模的函数时，这个指针就被称为“escape”。这样的指针就不能再被可靠地跟踪了。当指针发生逃逸时，将调用<code>check::PointerEscape</code>，以便通知checker注意它们感兴趣的逃逸指针。</p>
+<p>如果在无效化期间发生指针转义，则会提供有关调用事件的信息。</p>
+<p>类似于<code>check::DeadSymbols</code>可用于检测资源泄漏，<code>check::PointerEscape</code>可用于消除此类检查中的误报:逃逸的指针可能在我们不知情的情况下被释放，或者指针以外的值可能被更改。在<code>alpha.unix.SimpleStreamChecker</code>，这个回调用于查找逃逸的文件描述符:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ProgramStateRef <span class="title">SimpleStreamChecker::checkPointerEscape</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    ProgramStateRef State, <span class="type">const</span> InvalidatedSymbols &amp;Escaped,</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="type">const</span> CallEvent *Call, PointerEscapeKind Kind)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (Kind == PSK_DirectEscapeOnCall &amp;&amp; <span class="built_in">guaranteedNotToCloseFile</span>(*Call)) &#123;</span><br><span class="line">    <span class="keyword">return</span> State;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (InvalidatedSymbols ::const_iterator I = Escaped.<span class="built_in">begin</span>(),</span><br><span class="line">                                           E = Escaped.<span class="built_in">end</span>();</span><br><span class="line">       I != E; ++I) &#123;</span><br><span class="line">    SymbolRef Sym = *I;</span><br><span class="line">    State = State-&gt;<span class="built_in">remove</span>&lt;StreamMap&gt;(Sym);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> State;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在第6行，执行了一个自定义检查，以避免考虑对某些预期类型的失效事件的检查，从而启发式地判定函数是否是我们感兴趣的。</p>
+<h5 id="4-3-14-eval-Asumme"><a href="#4-3-14-eval-Asumme" class="headerlink" title="4.3.14 eval::Asumme"></a>4.3.14 <code>eval::Asumme</code></h5><p><code>ProgramStateRef evalAssume(ProgramStateRef State, SVal Cond,bool Assumption) const;</code></p>
+<p>每当程序状态中出现新的范围约束时，此回调将触发。有了这个回调，checks可以在它们内部存储的符号上有了新的约束时被触发，或者让它们帮助分析器与约束管理器一起“评估”假设，修改程序状态。但是，在使用这个回调之前，最好先看看<code>check::BranchCondition</code>是否足够满足你的需要。</p>
+<p>例如，<code>unix.Malloc</code>使用这个回调来查找指向已分配内存的任何符号是否被限制为空指针值。一旦这个符号分解成一个具体的值，再追踪这个符号就没有意义了:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ProgramStateRef <span class="title">MallocChecker::evalAssume</span><span class="params">(ProgramStateRef State, SVal Cond, <span class="type">bool</span> Assumption)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">    RegionStateTy RS = State-&gt;<span class="built_in">get</span>&lt;RegionState&gt;();</span><br><span class="line">    <span class="keyword">for</span> (RegionStateTy::iterator I = RS.<span class="built_in">begin</span>(), E = RS.<span class="built_in">end</span>(); I != E; ++I) &#123;</span><br><span class="line">        ConstraintManager &amp;CMgr = State-&gt;<span class="built_in">getConstraintManager</span>();</span><br><span class="line">        ConditionTruthVal AllocFailed = CMgr.<span class="built_in">isNull</span>(State, I.<span class="built_in">getKey</span>());</span><br><span class="line">        <span class="keyword">if</span> (AllocFailed.<span class="built_in">isConstrainedTrue</span>())</span><br><span class="line">            State = State-&gt;<span class="built_in">remove</span>&lt;RegionState&gt;(I.<span class="built_in">getKey</span>());</span><br><span class="line">    &#125; <span class="comment">/* ... */</span></span><br><span class="line">    <span class="keyword">return</span> State;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="4-3-15-eval-Call"><a href="#4-3-15-eval-Call" class="headerlink" title="4.3.15 eval::Call"></a>4.3.15 <code>eval::Call</code></h5><p><code>bool evalCall ( const CallExpr * CE , CheckerContext &amp;C ) const ;</code></p>
+<p>这个回调允许checker对函数调用建模，重载通常的过程间分析机制。当函数的源代码不能用于分析时，它可能对建模特定于领域的库函数有用。</p>
+<p>如果checker成功地建模了函数调用，回调函数应该返回true，如果checker更好地依赖分析器核心或其他checker来评估此调用，则返回false。</p>
+<p>我们不鼓励使用这个回调，因为任何调用事件只有一个checker可以评估(evaluate)。如果两个或两个以上的checker(可能是由不同的人开发的)意外地评估了相同的功能，那么分析器的行为是未定义的。因此，如果可能的话，应该考虑<code>check::PreCall</code>和<code>check::PostCall</code>，而且大多数时候，它们足够灵活，可以对程序状态的调用效果建模。官方的<code>core.builtin.BuiltinFunctions</code>checker使用这个回调函数来模拟某些编译器内置函数的行为:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">bool</span> BuiltinFunctionChecker ::<span class="built_in">evalCall</span>(<span class="type">const</span> CallExpr *CE,</span><br><span class="line">                                       CheckerContext &amp;C) <span class="type">const</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">const</span> FunctionDecl *FD = C.<span class="built_in">getCalleeDecl</span>(CE);</span><br><span class="line">    <span class="keyword">if</span> (!FD)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    ProgramStateRef State = C.<span class="built_in">getState</span>();</span><br><span class="line">    <span class="type">const</span> LocationContext *LCtx = C.<span class="built_in">getLocationContext</span>();</span><br><span class="line">    <span class="keyword">switch</span> (FD-&gt;<span class="built_in">getBuiltinID</span>()) &#123;</span><br><span class="line">            <span class="comment">/* ... */</span></span><br><span class="line">        <span class="keyword">case</span> Builtin ::BI__builtin_addressof: &#123;</span><br><span class="line">            <span class="built_in">assert</span>(CE-&gt;<span class="built_in">arg_begin</span>() != CE-&gt;<span class="built_in">arg_end</span>());</span><br><span class="line">            SVal X = State-&gt;<span class="built_in">getSVal</span>(*(CE-&gt;<span class="built_in">arg_begin</span>()), LCtx);</span><br><span class="line">            C.<span class="built_in">addTransition</span>(State-&gt;<span class="built_in">BindExpr</span>(CE, LCtx, X));</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">            <span class="comment">/* ... */</span> &#125;</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-4-实现bug-report-visitors"><a href="#4-4-实现bug-report-visitors" class="headerlink" title="4.4 实现bug report visitors"></a>4.4 实现<code>bug report visitors</code></h4><p>通常，<code>BugReporter</code>能够很好地解释路径敏感的错误是如何被发现的，并将符号执行路径上的所有事件显示给用户。然而，有时你可能希望它标记和显示其他事件。例如，当报告一个二次释放的错误时，你可能希望让用户知道第一个free发生的时间。在这种情况下，你需要实现一个<code>bug report visitor</code>，它将从头到尾遍历bug报告路径（一个<code>ExplodedNode</code>列表），并在整个过程中注入路径诊断片段。</p>
+<p><code>bug report visitor</code>的语法如下:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyVisitor</span> : <span class="keyword">public</span> BugReporterVisitorImpl&lt;MyVisitor&gt; &#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Profile</span><span class="params">(llvm::FoldingSetNodeID &amp;ID)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">        <span class="comment">/* ... */</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function">PathDiagnosticPiece *<span class="title">VisitNode</span><span class="params">(<span class="type">const</span> ExplodedNode *N, <span class="type">const</span> ExplodedNode *PrevN, BugReporterContext &amp;BBC, BugReporter &amp;BR)</span></span>&#123;</span><br><span class="line">        <span class="comment">/* ... */</span></span><br><span class="line">        <span class="keyword">if</span>(<span class="type">const</span> Stmt *S = <span class="comment">/* obtain a statement*/</span>)&#123;</span><br><span class="line">            <span class="function">PathDiagnosticLocation <span class="title">Pos</span><span class="params">(S,BBC.getSourceManager(), N-&gt;getLocationContexst())</span></span>;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">PathDiagnosticEventPiece</span>(Pos, <span class="string">&quot;Message&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>你需要实现<code>Profile(…)</code>方法，因为bug visitor将被存储在路径诊断回调的LLVM折叠集中。然后需要实现<code>VisitNode(…)</code>。它应该识别感兴趣的节点，为它构造一个路径诊断并返回，或者如果应该跳过该节点，则返回一个空指针。通过程序点中的语句识别节点并不罕见。在这种情况下，<code>PathDiagnosticLocation</code>类的静态助手方法<code>getStmt(…)</code>应该是有用的:</p>
+<p><code>const Stmt *S = PathDiagnosticLocation::getStmt(N);</code></p>
+<p>但是请注意，很可能有多个节点对应于同一个语句。</p>
+<h4 id="4-5-理解过程间分析"><a href="#4-5-理解过程间分析" class="headerlink" title="4.5 理解过程间分析"></a>4.5 理解过程间分析</h4><p>CSA建模函数调用的方式对于大多数checker来说是相当直接和透明的。分析器建模函数调用的方式通常是：内联调用代码体，紧接着执行被调用的函数（在实参被求值后），直到return，然后完成返回值绑定（如果有返回值），把返回值绑定到环境中的调用语句上，并继续调用函数的分析。</p>
+<p>如果分析器无法获得被调用函数的源代码，它会尝试保守地评估函数。在保守求值时，对函数的假设越少越好，通常会出现已知信息失效的情况。</p>
+<p>此外，CSAchecker可以通过订阅<code>eval::Call</code>回调函数来覆盖某些函数的求值过程。为了实现某些检查，你可能需要了解内联过程和保守计算过程的某些特性。</p>
+<h5 id="4-5-1-保守计算与无效化"><a href="#4-5-1-保守计算与无效化" class="headerlink" title="4.5.1 保守计算与无效化"></a>4.5.1 保守计算与无效化</h5><p>当调用的内联和检查端求值都失败时，分析器将退回到保守求值。这样的求值是相对简单的，因为没有什么真正被求值。相反，分析器需要删除以前已知的、可能已经无效的所有信息。删除这些信息的过程被称为无效化。</p>
+<p>失效主要由区域存储处理。函数可能会将未知值写入所有可用的位置，例如全局变量或作为参数传递给它的区域。为了表示这些值，我们创建了新的、不受约束的<code>SymbolConjured</code>类型的符号表达式(这种类型的符号将在5.5.2中详细讨论)，并绑定到区域存储中的无效区域。有两个checker回调可以让你在checker中捕捉无效化事件并采取行动:</p>
+<ul>
+<li><code>check::PointerEscape</code>让你处理指针符号被传递到保守求值函数的事件。</li>
+<li><code>check::RegionChanges</code>允许你观察失效的完整序列，包括一个失效区域的列表。</li>
+</ul>
+<h5 id="4-5-2-内联和栈帧"><a href="#4-5-2-内联和栈帧" class="headerlink" title="4.5.2 内联和栈帧"></a>4.5.2 内联和栈帧</h5><p>内联函数调用对于分析器来说是一个繁重的操作。每个函数调用每一个新的背景下就需要新建一次模型，被调用函数的上下文相关的爆炸图（可能对于上下文中的变量有不同的值，以及缺乏上下文中的不可达分支）成为当前分析的爆炸图的子图。</p>
+<p>内联需要多个前提条件，包括：</p>
+<ul>
+<li>被调用函数的代码体需要是可获取的</li>
+<li>没有checker会通过<code>eval::Call</code>分析函数调用</li>
+<li>如果被调用对象的分析达到最大爆炸节点的极限，则被调用对象将永远不会内联，而是保守地计算;</li>
+<li>即使支持递归，也只会执行有限数量的嵌套递归调用</li>
+</ul>
+<p>每当分析器内联一个函数并进入它时，就会创建一个新的<code>StackFrameContext</code>。这个结构是一种<code>LocationContext</code>，它描述了在过程间分析期间进入函数的位置。你可以通过<code>CheckerContext</code>的<code>getStackFrame()</code>方法获得当前的堆栈帧。一般来说你需要知道的是，如果我们在一个内联函数内或在顶部帧，可以使用<code>CheckerContext </code>的一个方便的<code>inTopFrame()</code>方法。</p>
+<p>你需要处理堆栈帧的一个常见的情况是<code>check::EndFunction</code>回调函数。这个回调函数在每次从函数返回时触发，但是你需要查看它是分析结束还是仅仅是从堆栈帧弹出。</p>
+<p>有时，你可能希望在检查逻辑中依赖符号值的层次结构(参见第5节)。那么你将知道表示函数参数值的符号值将是一个<code>SymbolRegionValue</code>类型的符号用于类型为<code>VarRegion</code>的区域，而这个区域用于类型为<code>ParmVarDecl</code>的<code>decl</code>。然而，对于内联调用，这是不对的。例如，参数可以是一个任意的<code>SVal</code>，在当前调用者上下文中传递给函数。因此，如果你依赖于这些检查，你很可能需要编写额外的检查代码，以了解IPA在当前事件中的状态。</p>
+<h4 id="4-6-延伸阅读"><a href="#4-6-延伸阅读" class="headerlink" title="4.6 延伸阅读"></a>4.6 延伸阅读</h4><p>符号执行的原始论文：<br>James C. King. Symbolic execution and program testing. In: Communications of the ACM, vol. 19. N7. pp. 385–394 (1976)</p>
+<p>过程间分析：</p>
+<p>Precise interprocedural dataflow analysis via graph reachability, T Reps, S Horwitz, and M Sagiv, POPL ’95, <a target="_blank" rel="noopener" href="http://portal.acm.org/citation.cfm?id=199462">http://portal.acm.org/citation.cfm?id=199462</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/05/05/Effective-Modern-C++-(1)/" rel="prev" title="Effective Modern C++ (2)">
+      <i class="fa fa-chevron-left"></i> Effective Modern C++ (2)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/05/22/CSA%20Guide%20CN%20CH5/" rel="next" title="Clang Static Analyzer · Checker Developer's Guide [CN] (5)">
+      Clang Static Analyzer · Checker Developer's Guide [CN] (5) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#CH4-%E8%B7%AF%E5%BE%84%E6%95%8F%E6%84%9F%E7%9A%84%E5%88%86%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">CH4 路径敏感的分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E4%BB%8E%E7%A8%8B%E5%BA%8F%E7%8A%B6%E6%80%81%E4%B8%AD%E8%8E%B7%E5%8F%96%E4%BF%A1%E6%81%AF"><span class="nav-number">1.1.</span> <span class="nav-text">4.1 从程序状态中获取信息</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-1-%E8%8E%B7%E5%8F%96%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E5%80%BC"><span class="nav-number">1.1.1.</span> <span class="nav-text">4.1.1 获取表达式的值</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-2-%E5%85%B3%E4%BA%8E%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E7%9A%84%E7%AE%80%E8%A6%81%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.2.</span> <span class="nav-text">4.1.2 关于内存区域的简要介绍</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-3-%E8%BF%AD%E4%BB%A3%E8%AE%BF%E9%97%AERegion-Store-Binding"><span class="nav-number">1.1.3.</span> <span class="nav-text">4.1.3 迭代访问Region Store Binding</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-4-%E5%AF%B9%E7%AC%A6%E5%8F%B7%E5%80%BC%E7%9A%84%E5%81%87%E8%AE%BE"><span class="nav-number">1.1.4.</span> <span class="nav-text">4.1.4 对符号值的假设</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-5-%E7%AC%A6%E5%8F%B7%E5%80%BC%E4%B8%8A%E7%9A%84%E6%93%8D%E4%BD%9C"><span class="nav-number">1.1.5.</span> <span class="nav-text">4.1.5 符号值上的操作</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-6-%E4%BD%BF%E7%94%A8%E6%B1%A1%E6%9F%93%E5%88%86%E6%9E%90"><span class="nav-number">1.1.6.</span> <span class="nav-text">4.1.6 使用污染分析</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E6%94%B9%E5%8F%98%E5%92%8C%E5%88%86%E5%89%B2%E7%A8%8B%E5%BA%8F%E7%8A%B6%E6%80%81"><span class="nav-number">1.2.</span> <span class="nav-text">4.2 改变和分割程序状态</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#4-2-1-%E5%90%91%E7%88%86%E7%82%B8%E5%9B%BE%E5%A2%9E%E5%8A%A0%E8%BE%B9"><span class="nav-number">1.2.1.</span> <span class="nav-text">4.2.1 向爆炸图增加边</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-2-2-%E5%88%87%E5%88%86%E8%8C%83%E5%9B%B4%E7%BA%A6%E6%9D%9F%E5%81%87%E8%AE%BE%E7%9A%84%E7%8A%B6%E6%80%81"><span class="nav-number">1.2.2.</span> <span class="nav-text">4.2.2 切分范围约束假设的状态</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-2-3-%E5%88%9B%E9%80%A0region-store-binding"><span class="nav-number">1.2.3.</span> <span class="nav-text">4.2.3 创造region store binding</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-2-4-%E6%89%A9%E5%B1%95%E6%B1%A1%E6%9F%93%E5%88%86%E6%9E%90"><span class="nav-number">1.2.4.</span> <span class="nav-text">4.2.4 扩展污染分析</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-2-5-%E4%BD%BF%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%8A%B6%E6%80%81%E4%B8%AD%E7%9A%84%E7%89%B9%E6%80%A7"><span class="nav-number">1.2.5.</span> <span class="nav-text">4.2.5 使用程序状态中的特性</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-%E8%B7%AF%E5%BE%84%E6%95%8F%E6%84%9Fchecker%E7%9A%84%E5%9B%9E%E8%B0%83%E5%87%BD%E6%95%B0"><span class="nav-number">1.3.</span> <span class="nav-text">4.3 路径敏感checker的回调函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-1-check-PreStmt-lt-T-gt"><span class="nav-number">1.4.</span> <span class="nav-text">4.3.1 check::PreStmt&lt;T&gt;</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-2-check-PostStmt-lt-T-gt"><span class="nav-number">1.4.1.</span> <span class="nav-text">4.3.2 check::PostStmt&lt;T&gt;</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-3-check-PreCall"><span class="nav-number">1.4.2.</span> <span class="nav-text">4.3.3 check::PreCall</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-4-check-PostCall"><span class="nav-number">1.4.3.</span> <span class="nav-text">4.3.4 check::PostCall</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-5-check-Location"><span class="nav-number">1.4.4.</span> <span class="nav-text">4.3.5 check::Location</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-6-check-Bind"><span class="nav-number">1.4.5.</span> <span class="nav-text">4.3.6 check::Bind</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-7-check-EndAnalysis"><span class="nav-number">1.4.6.</span> <span class="nav-text">4.3.7 check::EndAnalysis</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-8-check-EndFunction"><span class="nav-number">1.4.7.</span> <span class="nav-text">4.3.8 check::EndFunction</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-9-check-BranchCondition"><span class="nav-number">1.4.8.</span> <span class="nav-text">4.3.9 check::BranchCondition</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-10-check-LiveSymbols"><span class="nav-number">1.4.9.</span> <span class="nav-text">4.3.10 check::LiveSymbols</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-11-check-DeadSymbols"><span class="nav-number">1.4.10.</span> <span class="nav-text">4.3.11 check::DeadSymbols</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-12-check-RegionChanges"><span class="nav-number">1.4.11.</span> <span class="nav-text">4.3.12 check::RegionChanges</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-13-check-PointerEscape"><span class="nav-number">1.4.12.</span> <span class="nav-text">4.3.13 check::PointerEscape</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-14-eval-Asumme"><span class="nav-number">1.4.13.</span> <span class="nav-text">4.3.14 eval::Asumme</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-15-eval-Call"><span class="nav-number">1.4.14.</span> <span class="nav-text">4.3.15 eval::Call</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-%E5%AE%9E%E7%8E%B0bug-report-visitors"><span class="nav-number">1.5.</span> <span class="nav-text">4.4 实现bug report visitors</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-5-%E7%90%86%E8%A7%A3%E8%BF%87%E7%A8%8B%E9%97%B4%E5%88%86%E6%9E%90"><span class="nav-number">1.6.</span> <span class="nav-text">4.5 理解过程间分析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#4-5-1-%E4%BF%9D%E5%AE%88%E8%AE%A1%E7%AE%97%E4%B8%8E%E6%97%A0%E6%95%88%E5%8C%96"><span class="nav-number">1.6.1.</span> <span class="nav-text">4.5.1 保守计算与无效化</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-5-2-%E5%86%85%E8%81%94%E5%92%8C%E6%A0%88%E5%B8%A7"><span class="nav-number">1.6.2.</span> <span class="nav-text">4.5.2 内联和栈帧</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-6-%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB"><span class="nav-number">1.7.</span> <span class="nav-text">4.6 延伸阅读</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Asp"
+      src="https://th.bing.com/th/id/R.755c49133457b51f426d5ecede1204e7?rik=Mma9LI1YW%2bV9QQ&pid=ImgRaw&r=0">
+  <p class="site-author-name" itemprop="name">Asp</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Asp</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
