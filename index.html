@@ -144,6 +144,308 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/01/07/When%20is%20a%20type%20illegal/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/01/07/When%20is%20a%20type%20illegal/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-01-07 00:51:06 / Modified: 00:39:49" itemprop="dateCreated datePublished" datetime="2023-01-07T00:51:06+08:00">2023-01-07</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="When-is-a-type-illegal"><a href="#When-is-a-type-illegal" class="headerlink" title="When is a type illegal?"></a>When is a type illegal?</h2><p>An invalid type is a type that is not properly defined or that is constructed using incorrect syntax. An incomplete type is a type that refers to an entity that has not yet been fully defined.</p>
+<p>Here are some examples to illustrate the difference between invalid and incomplete types:</p>
+<ul>
+<li>Invalid type:</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">invalid_type x;  <span class="comment">// invalid_type is an invalid type</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Incomplete type:</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">S</span>;</span>  <span class="comment">// Forward declaration for struct S</span></span><br><span class="line"></span><br><span class="line">S s;  <span class="comment">// S is an incomplete type</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="incomplete"><a href="#incomplete" class="headerlink" title="incomplete:"></a>incomplete:</h3><p>In addition to forward declarations, a type can also be incomplete in the following situations:</p>
+<ul>
+<li>If a type refers to an entity that is defined in a separate source file that has not yet been compiled, it will be an incomplete type. For example:</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// main.c</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;S.h&quot;</span></span></span><br><span class="line"></span><br><span class="line">S s;  <span class="comment">// S is an incomplete type</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// S.c</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">S</span> &#123;</span>  <span class="comment">// Definition of struct S</span></span><br><span class="line">  <span class="keyword">int</span> x;</span><br><span class="line">  <span class="keyword">float</span> y;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>If a type refers to a template specialization that has not yet been instantiated, it will be an incomplete type. For example:</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">S</span> &#123;</span>  <span class="comment">// Template definition for struct S</span></span><br><span class="line">  T x;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">S&lt;<span class="keyword">int</span>&gt; s;  <span class="comment">// S&lt;int&gt; is a complete type</span></span><br><span class="line">S&lt;T&gt; t;  <span class="comment">// S&lt;T&gt; is an incomplete type</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>If a type refers to a function or member function that is declared, but not yet defined, it will be an incomplete type. For example:</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">f</span><span class="params">()</span></span>;  <span class="comment">// Declaration of function f</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> x = f();  <span class="comment">// f is an incomplete type</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>If a type refers to an enumeration that has been declared, but not yet defined, it will be an incomplete type. For example:</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">E</span>;</span>  <span class="comment">// Declaration of enumeration E</span></span><br><span class="line"></span><br><span class="line">E e;  <span class="comment">// E is an incomplete type</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>If a type refers to a member of a class or struct that is declared, but not yet defined, it will be an incomplete type. For example:</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">S</span> &#123;</span>  <span class="comment">// Definition of struct S</span></span><br><span class="line">  <span class="keyword">int</span> x;</span><br><span class="line">  S *s;  <span class="comment">// S is an incomplete type</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>If a type refers to an array whose size is not yet known, it will be an incomplete type. For example:</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">int</span> a[];  <span class="comment">// a is an incomplete type</span></span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/14/clang%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/14/clang%E6%BA%90%E7%A0%81%E5%AF%BC%E8%AF%BB/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-14 21:26:56 / Modified: 23:05:31" itemprop="dateCreated datePublished" datetime="2022-03-14T21:26:56+08:00">2022-03-14</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="clang源码导读-笔记"><a href="#clang源码导读-笔记" class="headerlink" title="clang源码导读 笔记"></a>clang源码导读 笔记</h1><h2 id="Chapter-1"><a href="#Chapter-1" class="headerlink" title="Chapter 1"></a>Chapter 1</h2><h4 id="clang的不同含义"><a href="#clang的不同含义" class="headerlink" title="clang的不同含义"></a>clang的不同含义</h4><ul>
+<li>clang driver：编译器驱动程序，根据简单的参数生成复杂的参数</li>
+<li>实际的编译器：clang -cci</li>
+<li>编译器的前端（PP+Compiler）</li>
+</ul>
+<h4 id="诊断信息"><a href="#诊断信息" class="headerlink" title="诊断信息"></a>诊断信息</h4><blockquote>
+<p>不同阶段有不同的诊断信息，保存在clang/include/clang/Basic/DiagnosticDriverKinds.td中</p>
+</blockquote>
+<p>diagnostic 分类：</p>
+<ul>
+<li>Ignored</li>
+<li>Note</li>
+<li>Remark</li>
+<li>Warning</li>
+<li>Error</li>
+<li>Fatal</li>
+</ul>
+<h4 id="平台信息"><a href="#平台信息" class="headerlink" title="平台信息"></a>平台信息</h4><p>LLVM Triple := “Architecture-Vendor-OperatingSystem”</p>
+<p>是LLVM的一个基本概念，一种古老的描述平台信息的方法。</p>
+<p>不同的编译参数会生成不同的Triple。</p>
+<h4 id="ToolChain"><a href="#ToolChain" class="headerlink" title="ToolChain"></a>ToolChain</h4><p>可以理解为编译工具链。例如MSVC就是microsoft的工具链。MinGW是GNU的工具链。</p>
+<h2 id="Chapter-2"><a href="#Chapter-2" class="headerlink" title="Chapter 2"></a>Chapter 2</h2><h4 id="clang-driver流程"><a href="#clang-driver流程" class="headerlink" title="clang driver流程"></a>clang driver流程</h4><p>如Chapter1 所言，Clang Driver 本身并不会做编译，而是“驱动”别人干活儿。</p>
+<p>driver的处理流程逻辑有这样几个部分：</p>
+<ul>
+<li>Parsing Option 解析传入的参数</li>
+<li>Pipeline： Compilation Action Construction 根据每个输入的文件和类型，组建action。</li>
+</ul>
+<blockquote>
+<p>可以通过<code>clang -ccc-print-phases</code> 查看需要处理的action</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/17/Load-Balanced%20Sensor%20Grouping%20for%20IEEE%20802.11h%20Networks/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Good Good Study">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/17/Load-Balanced%20Sensor%20Grouping%20for%20IEEE%20802.11h%20Networks/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-01-17 22:04:48" itemprop="dateCreated datePublished" datetime="2022-01-17T22:04:48+08:00">2022-01-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-01-18 00:09:56" itemprop="dateModified" datetime="2022-01-18T00:09:56+08:00">2022-01-18</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Load-Balanced-Sensor-Grouping-for-IEEE-802-11h-Networks"><a href="#Load-Balanced-Sensor-Grouping-for-IEEE-802-11h-Networks" class="headerlink" title="Load-Balanced Sensor Grouping for IEEE 802.11h Networks"></a>Load-Balanced Sensor Grouping for IEEE 802.11h Networks</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>传统IEEE 802.11 网络是用于小型无线网络，一个AP会给一个小范围的设备提供服务。但物联网(IoT)、传感器网络和机器类型通信(MTC)等技术的出现改变了局面：特点是数据包小，设备特别特别多，传统方法难以应对。</p>
+<p>节点的增多 -&gt; 碰撞概率增大，信道效率下降。</p>
+<p>IEEE 802.11ah 许可了新的频带，例如小于1GHz的频带，将网络覆盖范围扩大了（到1km以上），使得“隐蔽站问题”更严重，这可能带来性能极大下降[7]-[9]。目前提出的解决隐蔽站问题的方法是基于RTS/CTS，或者集中式分组策略，但并不适用于大量节点的物联网场景（需要AP收集全局信息，并且时刻监测是否有隐蔽站问题，对于大数量来说不现实，更何况节点数量还是在时刻变化的）。</p>
+<p>群同步分布式协调功能(Group Synchronized Distributed Coordination Function, GS-DCF)在IEEE 802.11ah标准中被引入，用于给用户分组，并给每个分组一个限制访问窗口(Restricted Access Window, RAW)。因此，分组策略就成为了影响网络性能的重要因素。</p>
+<p>前人的解决方案包括：</p>
+<ul>
+<li>根据碰撞概率调整传输机会：[2]</li>
+<li>给用户分组，并限制组内竞争：[3]</li>
+<li>给用户分组，并给分组指定一个限制访问窗口（RAW），以提高总吞吐量：[4][5]。</li>
+<li>将更大的RAW分配给拥塞组，而不是均等RAW：[6]</li>
+</ul>
+<p>本文：并不适用RTS/CTS，也不是集中式，是分布式的解决问题。思路是，<strong>确保同一组中的节点足够接近，使得它们总是能在自己的RAW感知到彼此的传输。</strong>本文是基于RSS（Received Signal Strength)的：节点察觉到其它节点的能量（power），并加入有最大能量的节点的组。</p>
+<p>本文的贡献：</p>
+<ul>
+<li>提出这种开创性的想法：基于RSS来分组。</li>
+<li>推导出一组中两个节点能够彼此感知的概率</li>
+<li>进行仿真，说明隐蔽站问题可以忽略不计，不需要RTS/CTS</li>
+</ul>
+<h3 id="模型"><a href="#模型" class="headerlink" title="模型"></a>模型</h3><p>考虑一个IEEE 802.11 ah网络，每个无线终端都把包传输到接入点（AP）。覆盖范围是以AP为中心的圆。节点均匀分布在圆内，不会动，位置遵循密度为λ的泊松分布（PPP）。</p>
+<p>分析中用的模型是一个参数为α和β的路径损耗模型，意思是在距离d处，感知到的能量是：$P_r(d) = \frac{\beta}{d^{\alpha}} * P_t$ ，其中Pt 为源强度。</p>
+<p>在仿真中，我们还考虑了接收功率为指数随机变量的瑞利快衰落对数正态阴影模型，意思是感知到的能量是指数型随机变量，其均值为对数正态随机变量：$\overlineγ = N (10 * log_{10}(P_r(d)),σ)$ （σ是标准差，σ^2是方差）。</p>
+<p>我们把[4]里的方案叫做“随机分组方案”，根据[3]，我们并不区分RAW的slot是否cross，也即不区分CR-GS-DCF和NCR-GS-DCF，因为它对分组没有影响。</p>
+<h3 id="分组策略"><a href="#分组策略" class="headerlink" title="分组策略"></a>分组策略</h3><p>正如前面提到的，因为节点数量太多，指望中心化地操作（让AP来分组）是不现实的，所以每个节点需要自力更生，自己选组。选组的依据就是RSS；具体来说，在每个分组更新周期（GUP，Group Update Period）使用信标帧（BF，Beacon Frame）触发，侦听来自组长（group head)的导频信号的功率。我们管这个BF叫”灯塔“，它与传统信标帧的不同之处在于在它开始时有一个分组过程。  </p>
+<h4 id="基于RSS的分组过程："><a href="#基于RSS的分组过程：" class="headerlink" title="基于RSS的分组过程："></a>基于RSS的分组过程：</h4><p>一个节点将在一个被称为分组时隙(Grouping slot time, GST)的预留时间段内，按照由AP指定的顺序，从随机选择的节点侦听一些pilot消息。  </p>
+<h4 id="算法："><a href="#算法：" class="headerlink" title="算法："></a>算法：</h4><p>在每个时隙里，由AP选择M个随机节点，作为组长，并告知组长它们各自的序号和总组长个数M。然后，组长依次“发言”，非组长成员依次检测能量。最后，组长加入自己为序号的组，组员加入能量最大的序号的组，实现聚类。</p>
+<p>与之前的中心化算法相比，这个算法不需要巨大的控制开销，也不需要任何位置信息，无论是收集还是交换。</p>
+<h4 id="关于实施："><a href="#关于实施：" class="headerlink" title="关于实施："></a>关于实施：</h4><p>功率测量在MAC中都存在，随时可以提供。</p>
+<p>在两个pilot之间需要有一些间隔，本文不会提及这部分。</p>
+<p>发送M在IEEE草案中已经有设计到，还可以使用传递流量指示的映射策略（DTIM）来告知组长们它们的序号。</p>
+<p>由于GST的时隙很短，它们可以在SIFS间隙下连续传输，因此其他基于CSMA/CA的站，比如其它AP，不能在过程中插入传输；也即可以排除其它AP的干扰。</p>
+<h4 id="模型分析："><a href="#模型分析：" class="headerlink" title="模型分析："></a>模型分析：</h4><p>式3给出了第一个度量：平均距离，算法是每两点间的距离加和取平均。</p>
+<p>式4给出了不同组里节点个数的标准差：算法就是方差开根号。</p>
+<p>（这两个式子和后文好像没什么关系。）</p>
+<p>然后要做的是，分析隐蔽站发生的概率。</p>
+<p>首先，均匀分布，所以是一个经典的几何概型；总面积是A，上面一共有M个组长，那么面积N中有k个组长的概率就是式5，是一个二项分布。</p>
+<p>因而得出，一个节点距离最近的组长的距离的累计密度函数CDF是式6，算式的想法是，距离为x &lt;==&gt; 距离小于等于x的范围内没有组长。</p>
+<p>考虑到AP的覆盖是有限范围，最边缘的节点距离为x的将不是一个整圆，所以引入一个修正模型（式7），但是在M够大的时候可以认为这两者是相等的，所以得到（式8）。</p>
+<p>用累计密度函数求导得到概率密度函数，所以一个节点和它最近的组长的距离为x的概率是式9。</p>
+<p>看图3，一个节点和一个组长，节点的检测范围是R，组长的信号范围是Y，两者距离是X。</p>
+<p>那么，同组中的两者能够互相检测到的概率就是式10。</p>
+<blockquote>
+<p>关于式10，$\sqrt{(\frac{A}{\pi}})=R$，fX(x) 就是指node1距离组长距离是x的概率，fY(y)就是距离组长是y的概率，也即另一点Y等概率分布在距离组长为y的圆上，那么结合式11，可以分析出三种情况时对应的g(x,y)。</p>
+<p>关于式11，看图3，当$R_s \ge x+y$时，显然node1的检测范围覆盖了所有到组长距离为y的点的范围。当$R_s \lt |x-y|$时，一点也没有覆盖。当在中间时，能覆盖是对应的弧长，如式11，借由余弦定理求出。</p>
+</blockquote>
+<p>根据论文14，我们可以知道随机模型（还记得吗？是论文【4】里提到的）的概率，见式（12）-（14）。于是建模完成，剩下的就是算了。</p>
+<h3 id="模型评估"><a href="#模型评估" class="headerlink" title="模型评估"></a>模型评估</h3><p>这部分就比较笼统啦，总之说的就是，效果更好。原因在于，即使分布式让分组不那么均匀，也许增大了一点竞争，但是相比较“隐蔽站”问题，它对吞吐量的破坏性更小。</p>
+<p>在更为复杂的RayLeigh衰落信道下，由于衰落，所以区域不再是Voronoi，具有最高感知功率的也不一定是最近的组头，性能会有所下降，但是算法性能仍然很好。</p>
+<p>随着M增大，边缘效应越来越可以忽略不计，模拟结合就和理论解析结果更接近。</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>这篇文章就是说了应对小包多点情况下的解决方法，相比较中心式算法借由AP来分组，它首次提出了去中心化的算法，让每个节点自己听，然后选择能听到的声音最大的组长作为自己的分组。这种想法相比较随机分组性能更好，并且这种聚类算法也有更好的扩展性，每个分组中的组长可以充当其它节点的中继。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/10/15/Decay&Array-Pointer%20conversion/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -854,78 +1156,11 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/09/25/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Good Good Study">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/09/25/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-09-25 23:11:06" itemprop="dateCreated datePublished" datetime="2021-09-25T23:11:06+08:00">2021-09-25</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+  </nav>
 
 
 
@@ -990,7 +1225,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-count">11</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1018,7 +1253,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
